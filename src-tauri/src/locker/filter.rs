@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::rules::{Config, FilterMode, KeyRule};
+use super::rules::{Config, KeyRule};
 
 pub fn evaluate(
     config: &Config,
@@ -10,11 +10,11 @@ pub fn evaluate(
 ) -> bool {
     if let Some(app_name) = active_app {
         if let Some(app_rule) = find_app_rule(&config.app_rules, app_name) {
-            return match_mode(app_rule.mode, &app_rule.rules, key_code, modifiers);
+            return whitelist_match(&app_rule.rules, key_code, modifiers);
         }
     }
 
-    match_mode(config.mode, &config.rules, key_code, modifiers)
+    whitelist_match(&config.rules, key_code, modifiers)
 }
 
 fn find_app_rule<'a>(app_rules: &'a [super::rules::AppRule], process_name: &str) -> Option<&'a super::rules::AppRule> {
@@ -24,29 +24,21 @@ fn find_app_rule<'a>(app_rules: &'a [super::rules::AppRule], process_name: &str)
     })
 }
 
-fn match_mode(mode: FilterMode, rules: &[KeyRule], key_code: u32, modifiers: &HashSet<u32>) -> bool {
-    match mode {
-        FilterMode::Whitelist => {
-            rules.iter().any(|r| r.allowed && r.matches(key_code, modifiers))
-        }
-        FilterMode::Blacklist => {
-            !rules.iter().any(|r| !r.allowed && r.matches(key_code, modifiers))
-        }
-    }
+fn whitelist_match(rules: &[KeyRule], key_code: u32, modifiers: &HashSet<u32>) -> bool {
+    rules.iter().any(|r| r.allowed && r.matches(key_code, modifiers))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::locker::rules::FilterMode;
+    use crate::locker::rules::{AppRule, Config, KeyRule};
 
     fn test_config() -> Config {
         let mut c = Config::default();
-        c.mode = FilterMode::Whitelist;
         c.rules = vec![
-            KeyRule { key: 30, label: "A".into(), allowed: true, modifiers: None },
-            KeyRule { key: 57, label: "Space".into(), allowed: true, modifiers: None },
-            KeyRule { key: 31, label: "S".into(), allowed: false, modifiers: None },
+            KeyRule { key: 0x41, label: "A".into(), allowed: true, modifiers: None },
+            KeyRule { key: 0x20, label: "Space".into(), allowed: true, modifiers: None },
+            KeyRule { key: 0x53, label: "S".into(), allowed: false, modifiers: None },
         ];
         c
     }
@@ -55,42 +47,38 @@ mod tests {
     fn test_whitelist_allows_listed() {
         let config = test_config();
         let mods = HashSet::new();
-        assert!(evaluate(&config, None, 30, &mods)); // A allowed
-        assert!(evaluate(&config, None, 57, &mods)); // Space allowed
+        assert!(evaluate(&config, None, 0x41, &mods));
+        assert!(evaluate(&config, None, 0x20, &mods));
     }
 
     #[test]
     fn test_whitelist_blocks_unlisted() {
         let config = test_config();
         let mods = HashSet::new();
-        assert!(!evaluate(&config, None, 32, &mods)); // D not listed
-        assert!(!evaluate(&config, None, 44, &mods)); // Z not listed
+        assert!(!evaluate(&config, None, 0x44, &mods));
+        assert!(!evaluate(&config, None, 0x5A, &mods));
     }
 
     #[test]
-    fn test_blacklist_mode() {
-        let mut config = test_config();
-        config.mode = FilterMode::Blacklist;
+    fn test_whitelist_blocks_disallowed() {
+        let config = test_config();
         let mods = HashSet::new();
-        assert!(!evaluate(&config, None, 31, &mods)); // S blocked
-        assert!(evaluate(&config, None, 32, &mods)); // D not blocked
+        assert!(!evaluate(&config, None, 0x53, &mods));
     }
 
     #[test]
     fn test_app_rule_priority() {
         let mut config = Config::default();
-        config.mode = FilterMode::Blacklist;
         config.app_rules = vec![
-            crate::locker::rules::AppRule {
+            AppRule {
                 process_names: vec!["notepad.exe".into()],
-                mode: FilterMode::Whitelist,
                 rules: vec![
-                    KeyRule { key: 30, label: "A".into(), allowed: true, modifiers: None },
+                    KeyRule { key: 0x41, label: "A".into(), allowed: true, modifiers: None },
                 ],
             },
         ];
         let mods = HashSet::new();
-        assert!(evaluate(&config, Some("notepad.exe"), 30, &mods));
-        assert!(!evaluate(&config, Some("notepad.exe"), 31, &mods));
+        assert!(evaluate(&config, Some("notepad.exe"), 0x41, &mods));
+        assert!(!evaluate(&config, Some("notepad.exe"), 0x53, &mods));
     }
 }

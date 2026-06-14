@@ -1,12 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum FilterMode {
-    Whitelist,
-    Blacklist,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyRule {
     pub key: u32,
@@ -19,14 +12,12 @@ pub struct KeyRule {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppRule {
     pub process_names: Vec<String>,
-    pub mode: FilterMode,
     #[serde(default)]
     pub rules: Vec<KeyRule>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    pub mode: FilterMode,
     #[serde(default)]
     pub rules: Vec<KeyRule>,
     #[serde(default)]
@@ -81,11 +72,10 @@ impl Default for Config {
         }).collect();
 
         Config {
-            mode: FilterMode::Whitelist,
             rules,
             app_rules: Vec::new(),
             auto_unlock_timeout: Some(300),
-            unlock_combo: vec![0xA2, 0xA4, 0x4C], // LCtrl + LAlt + L
+            unlock_combo: vec![0xA2, 0xA4, 0x4C],
             version: 2,
         }
     }
