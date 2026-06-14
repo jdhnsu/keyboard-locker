@@ -45,64 +45,25 @@ const VK = {
   INSERT: 0x2D, HOME: 0x24, PGUP: 0x21,
   DELETE: 0x2E, END: 0x23, PGDN: 0x22,
   UP: 0x26, DOWN: 0x28, LEFT: 0x25, RIGHT: 0x27,
+  NUM0: 0x60, NUM1: 0x61, NUM2: 0x62, NUM3: 0x63, NUM4: 0x64,
+  NUM5: 0x65, NUM6: 0x66, NUM7: 0x67, NUM8: 0x68, NUM9: 0x69,
+  NUMMUL: 0x6A, NUMADD: 0x6B,
+  NUMSUB: 0x6D, NUMDOT: 0x6E, NUMDIV: 0x6F,
+  NUMLK: 0x90,
+  SNAPSHOT: 0x2C, SCROLL: 0x91, PAUSE: 0x13,
 } as const
 
-const ansiRows: { label: string; code: number; width: string }[][] = [
-  [
-    { label: 'Esc', code: VK.ESC, width: '3rem' },
-    { label: 'F1', code: VK.F1, width: '3rem' }, { label: 'F2', code: VK.F2, width: '3rem' },
-    { label: 'F3', code: VK.F3, width: '3rem' }, { label: 'F4', code: VK.F4, width: '3rem' },
-    { label: 'F5', code: VK.F5, width: '3rem' }, { label: 'F6', code: VK.F6, width: '3rem' },
-    { label: 'F7', code: VK.F7, width: '3rem' }, { label: 'F8', code: VK.F8, width: '3rem' },
-    { label: 'F9', code: VK.F9, width: '3rem' }, { label: 'F10', code: VK.F10, width: '3rem' },
-    { label: 'F11', code: VK.F11, width: '3rem' }, { label: 'F12', code: VK.F12, width: '3rem' },
-  ],
-  [
-    { label: '`', code: VK.BACKTICK, width: '3rem' }, { label: '1', code: VK.N1, width: '3rem' },
-    { label: '2', code: VK.N2, width: '3rem' }, { label: '3', code: VK.N3, width: '3rem' },
-    { label: '4', code: VK.N4, width: '3rem' }, { label: '5', code: VK.N5, width: '3rem' },
-    { label: '6', code: VK.N6, width: '3rem' }, { label: '7', code: VK.N7, width: '3rem' },
-    { label: '8', code: VK.N8, width: '3rem' }, { label: '9', code: VK.N9, width: '3rem' },
-    { label: '0', code: VK.N0, width: '3rem' }, { label: '-', code: VK.MINUS, width: '3rem' },
-    { label: '=', code: VK.EQUAL, width: '3rem' }, { label: 'Bksp', code: VK.BKSP, width: '5rem' },
-  ],
-  [
-    { label: 'Tab', code: VK.TAB, width: '4.5rem' }, { label: 'Q', code: VK.Q, width: '3rem' },
-    { label: 'W', code: VK.W, width: '3rem' }, { label: 'E', code: VK.E, width: '3rem' },
-    { label: 'R', code: VK.R, width: '3rem' }, { label: 'T', code: VK.T, width: '3rem' },
-    { label: 'Y', code: VK.Y, width: '3rem' }, { label: 'U', code: VK.U, width: '3rem' },
-    { label: 'I', code: VK.I, width: '3rem' }, { label: 'O', code: VK.O, width: '3rem' },
-    { label: 'P', code: VK.P, width: '3rem' }, { label: '[', code: VK.LBRACKET, width: '3rem' },
-    { label: ']', code: VK.RBRACKET, width: '3rem' }, { label: '\\', code: VK.BACKSLASH, width: '4rem' },
-  ],
-  [
-    { label: 'Caps', code: VK.CAPSLOCK, width: '5.5rem' }, { label: 'A', code: VK.A, width: '3rem' },
-    { label: 'S', code: VK.S, width: '3rem' }, { label: 'D', code: VK.D, width: '3rem' },
-    { label: 'F', code: VK.F, width: '3rem' }, { label: 'G', code: VK.G, width: '3rem' },
-    { label: 'H', code: VK.H, width: '3rem' }, { label: 'J', code: VK.J, width: '3rem' },
-    { label: 'K', code: VK.K, width: '3rem' }, { label: 'L', code: VK.L, width: '3rem' },
-    { label: ';', code: VK.SEMICOLON, width: '3rem' }, { label: "'", code: VK.QUOTE, width: '3rem' },
-    { label: 'Enter', code: VK.ENTER, width: '6rem' },
-  ],
-  [
-    { label: 'Shift', code: VK.LSHIFT, width: '7rem' }, { label: 'Z', code: VK.Z, width: '3rem' },
-    { label: 'X', code: VK.X, width: '3rem' }, { label: 'C', code: VK.C, width: '3rem' },
-    { label: 'V', code: VK.V, width: '3rem' }, { label: 'B', code: VK.B, width: '3rem' },
-    { label: 'N', code: VK.N, width: '3rem' }, { label: 'M', code: VK.M, width: '3rem' },
-    { label: ',', code: VK.COMMA, width: '3rem' }, { label: '.', code: VK.DOT, width: '3rem' },
-    { label: '/', code: VK.SLASH, width: '3rem' }, { label: 'Shift', code: VK.RSHIFT, width: '1fr' },
-  ],
-  [
-    { label: 'Ctrl', code: VK.LCTRL, width: '4.5rem' },
-    { label: 'Win', code: VK.LWIN, width: '3.5rem' },
-    { label: 'Alt', code: VK.LALT, width: '3.5rem' },
-    { label: '', code: VK.SPACE, width: '20rem' },
-    { label: 'Alt', code: VK.RALT, width: '3.5rem' },
-    { label: 'Win', code: VK.RWIN, width: '3.5rem' },
-    { label: 'Menu', code: VK.MENU, width: '3.5rem' },
-    { label: 'Ctrl', code: VK.RCTRL, width: '1fr' },
-  ],
-]
+// ---------- Key width constants (CSS values) ----------
+const W_STD = '2.5rem'
+const W_TAB = '3.75rem'
+const W_CAPS = '4.75rem'
+const W_LSHIFT = '6rem'
+const W_BKSP = '4.5rem'
+const W_ENTER = '5.25rem'
+const W_LCTRL = '3.75rem'
+const W_MOD = '3rem'         // Win / Alt / Menu / Backslash
+const W_FSPACER_BIG = '2.5rem'
+const W_FSPACER_SM = '1.5rem'
 
 function isAllowed(code: number): boolean {
   const rule = props.rules.find(r => r.key === code)
@@ -115,15 +76,16 @@ function handleToggle(code: number) {
 </script>
 
 <template>
-  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col items-center justify-center shadow-sm overflow-x-auto w-full p-lg">
-    <div class="w-full flex justify-between items-center max-w-[850px] flex-wrap mb-sm">
+  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col items-center shadow-sm p-md select-none overflow-x-auto">
+    <!-- Header: title + legend + layout selector -->
+    <div class="w-full flex justify-between items-center flex-wrap gap-sm mb-sm">
       <div>
         <h2 class="font-headline-lg text-headline-lg text-on-surface">可视化键盘映射</h2>
         <p class="font-body-md text-body-md text-on-surface-variant">
           {{ locked ? '锁定中 — 按键配置已锁定' : '点击按键切换其拦截状态，然后开启锁定' }}
         </p>
       </div>
-      <div class="flex gap-md">
+      <div class="flex gap-md items-center flex-wrap">
         <div class="flex items-center gap-xs mr-md border-r border-outline-variant/50 pr-md">
           <span class="font-label-md text-label-md text-on-surface-variant">键盘布局:</span>
           <select
@@ -145,19 +107,174 @@ function handleToggle(code: number) {
       </div>
     </div>
 
-    <div class="flex flex-col gap-[6px] bg-surface-container rounded-lg border border-outline-variant/50 min-w-max select-none shadow-inner p-sm">
-      <div v-for="(row, ri) in ansiRows" :key="ri" class="flex gap-[6px]">
-        <KeyButton
-          v-for="key in row"
-          :key="`${ri}-${key.code}`"
-          :label="key.label"
-          :code="key.code"
-          :allowed="isAllowed(key.code)"
-          :width="key.width === '1fr' ? 'auto' : key.width"
-          :disabled="locked"
-          :class="{ 'flex-1': key.width === '1fr' }"
-          @toggle="handleToggle"
-        />
+    <!-- ========== 键盘整体容器 ========== -->
+    <div class="bg-surface-container rounded-lg border border-outline-variant/50 shadow-inner p-sm min-w-max">
+      <div class="flex gap-4">
+
+        <!-- ========== 主键盘区 (左) ========== -->
+        <div class="flex flex-col gap-1">
+          <!-- 功能键行 -->
+          <div class="flex gap-1 mb-1">
+            <KeyButton label="Esc" :code="VK.ESC" :allowed="isAllowed(VK.ESC)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <span class="flex-shrink-0" :style="{ width: W_FSPACER_BIG }" />
+            <KeyButton label="F1" :code="VK.F1" :allowed="isAllowed(VK.F1)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F2" :code="VK.F2" :allowed="isAllowed(VK.F2)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F3" :code="VK.F3" :allowed="isAllowed(VK.F3)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F4" :code="VK.F4" :allowed="isAllowed(VK.F4)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <span class="flex-shrink-0" :style="{ width: W_FSPACER_SM }" />
+            <KeyButton label="F5" :code="VK.F5" :allowed="isAllowed(VK.F5)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F6" :code="VK.F6" :allowed="isAllowed(VK.F6)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F7" :code="VK.F7" :allowed="isAllowed(VK.F7)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F8" :code="VK.F8" :allowed="isAllowed(VK.F8)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <span class="flex-shrink-0" :style="{ width: W_FSPACER_SM }" />
+            <KeyButton label="F9" :code="VK.F9" :allowed="isAllowed(VK.F9)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F10" :code="VK.F10" :allowed="isAllowed(VK.F10)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F11" :code="VK.F11" :allowed="isAllowed(VK.F11)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F12" :code="VK.F12" :allowed="isAllowed(VK.F12)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          </div>
+
+          <!-- 数字键行 -->
+          <div class="flex gap-1">
+            <KeyButton label="`" :code="VK.BACKTICK" :allowed="isAllowed(VK.BACKTICK)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="1" :code="VK.N1" :allowed="isAllowed(VK.N1)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="2" :code="VK.N2" :allowed="isAllowed(VK.N2)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="3" :code="VK.N3" :allowed="isAllowed(VK.N3)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="4" :code="VK.N4" :allowed="isAllowed(VK.N4)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="5" :code="VK.N5" :allowed="isAllowed(VK.N5)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="6" :code="VK.N6" :allowed="isAllowed(VK.N6)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="7" :code="VK.N7" :allowed="isAllowed(VK.N7)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="8" :code="VK.N8" :allowed="isAllowed(VK.N8)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="9" :code="VK.N9" :allowed="isAllowed(VK.N9)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="0" :code="VK.N0" :allowed="isAllowed(VK.N0)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="-" :code="VK.MINUS" :allowed="isAllowed(VK.MINUS)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="=" :code="VK.EQUAL" :allowed="isAllowed(VK.EQUAL)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Bksp" :code="VK.BKSP" :allowed="isAllowed(VK.BKSP)" :width="W_BKSP" :disabled="locked" @toggle="handleToggle" />
+          </div>
+
+          <!-- Tab 行 -->
+          <div class="flex gap-1">
+            <KeyButton label="Tab" :code="VK.TAB" :allowed="isAllowed(VK.TAB)" :width="W_TAB" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Q" :code="VK.Q" :allowed="isAllowed(VK.Q)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="W" :code="VK.W" :allowed="isAllowed(VK.W)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="E" :code="VK.E" :allowed="isAllowed(VK.E)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="R" :code="VK.R" :allowed="isAllowed(VK.R)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="T" :code="VK.T" :allowed="isAllowed(VK.T)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Y" :code="VK.Y" :allowed="isAllowed(VK.Y)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="U" :code="VK.U" :allowed="isAllowed(VK.U)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="I" :code="VK.I" :allowed="isAllowed(VK.I)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="O" :code="VK.O" :allowed="isAllowed(VK.O)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="P" :code="VK.P" :allowed="isAllowed(VK.P)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="[" :code="VK.LBRACKET" :allowed="isAllowed(VK.LBRACKET)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="]" :code="VK.RBRACKET" :allowed="isAllowed(VK.RBRACKET)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="\" :code="VK.BACKSLASH" :allowed="isAllowed(VK.BACKSLASH)" :width="W_MOD" :disabled="locked" @toggle="handleToggle" />
+          </div>
+
+          <!-- Caps 行 -->
+          <div class="flex gap-1">
+            <KeyButton label="Caps" :code="VK.CAPSLOCK" :allowed="isAllowed(VK.CAPSLOCK)" :width="W_CAPS" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="A" :code="VK.A" :allowed="isAllowed(VK.A)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="S" :code="VK.S" :allowed="isAllowed(VK.S)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="D" :code="VK.D" :allowed="isAllowed(VK.D)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="F" :code="VK.F" :allowed="isAllowed(VK.F)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="G" :code="VK.G" :allowed="isAllowed(VK.G)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="H" :code="VK.H" :allowed="isAllowed(VK.H)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="J" :code="VK.J" :allowed="isAllowed(VK.J)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="K" :code="VK.K" :allowed="isAllowed(VK.K)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="L" :code="VK.L" :allowed="isAllowed(VK.L)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label=";" :code="VK.SEMICOLON" :allowed="isAllowed(VK.SEMICOLON)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="'" :code="VK.QUOTE" :allowed="isAllowed(VK.QUOTE)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Enter" :code="VK.ENTER" :allowed="isAllowed(VK.ENTER)" :width="W_ENTER" :disabled="locked" @toggle="handleToggle" />
+          </div>
+
+          <!-- Shift 行 -->
+          <div class="flex gap-1">
+            <KeyButton label="Shift" :code="VK.LSHIFT" :allowed="isAllowed(VK.LSHIFT)" :width="W_LSHIFT" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Z" :code="VK.Z" :allowed="isAllowed(VK.Z)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="X" :code="VK.X" :allowed="isAllowed(VK.X)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="C" :code="VK.C" :allowed="isAllowed(VK.C)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="V" :code="VK.V" :allowed="isAllowed(VK.V)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="B" :code="VK.B" :allowed="isAllowed(VK.B)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="N" :code="VK.N" :allowed="isAllowed(VK.N)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="M" :code="VK.M" :allowed="isAllowed(VK.M)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="," :code="VK.COMMA" :allowed="isAllowed(VK.COMMA)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="." :code="VK.DOT" :allowed="isAllowed(VK.DOT)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="/" :code="VK.SLASH" :allowed="isAllowed(VK.SLASH)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Shift" :code="VK.RSHIFT" :allowed="isAllowed(VK.RSHIFT)" width="" :disabled="locked" @toggle="handleToggle" class="flex-1" />
+          </div>
+
+          <!-- 底行 Ctrl 行 -->
+          <div class="flex gap-1">
+            <KeyButton label="Ctrl" :code="VK.LCTRL" :allowed="isAllowed(VK.LCTRL)" :width="W_LCTRL" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Win" :code="VK.LWIN" :allowed="isAllowed(VK.LWIN)" :width="W_MOD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Alt" :code="VK.LALT" :allowed="isAllowed(VK.LALT)" :width="W_MOD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="" :code="VK.SPACE" :allowed="isAllowed(VK.SPACE)" width="" :disabled="locked" @toggle="handleToggle" class="flex-1" />
+            <KeyButton label="Alt" :code="VK.RALT" :allowed="isAllowed(VK.RALT)" :width="W_MOD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Win" :code="VK.RWIN" :allowed="isAllowed(VK.RWIN)" :width="W_MOD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Menu" :code="VK.MENU" :allowed="isAllowed(VK.MENU)" :width="W_MOD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Ctrl" :code="VK.RCTRL" :allowed="isAllowed(VK.RCTRL)" width="" :disabled="locked" @toggle="handleToggle" class="flex-1" />
+          </div>
+        </div>
+
+        <!-- ========== 中间导航区：系统键 + 编辑键 + 方向键 ========== -->
+        <div class="flex flex-col justify-between gap-3 pt-2">
+          <!-- 系统键行 -->
+          <div class="flex gap-1">
+            <KeyButton label="PrtSc" :code="VK.SNAPSHOT" :allowed="isAllowed(VK.SNAPSHOT)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="ScrLk" :code="VK.SCROLL"   :allowed="isAllowed(VK.SCROLL)"   :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            <KeyButton label="Pause" :code="VK.PAUSE"    :allowed="isAllowed(VK.PAUSE)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          </div>
+          <!-- 编辑键区 -->
+          <div class="flex flex-col gap-1">
+            <div class="flex gap-1">
+              <KeyButton label="Ins" :code="VK.INSERT" :allowed="isAllowed(VK.INSERT)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+              <KeyButton label="Home" :code="VK.HOME" :allowed="isAllowed(VK.HOME)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+              <KeyButton label="PgUp" :code="VK.PGUP" :allowed="isAllowed(VK.PGUP)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            </div>
+            <div class="flex gap-1">
+              <KeyButton label="Del" :code="VK.DELETE" :allowed="isAllowed(VK.DELETE)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+              <KeyButton label="End" :code="VK.END" :allowed="isAllowed(VK.END)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+              <KeyButton label="PgDn" :code="VK.PGDN" :allowed="isAllowed(VK.PGDN)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            </div>
+          </div>
+
+          <!-- 方向键区 -->
+          <div class="flex flex-col gap-1">
+            <div class="flex gap-1 justify-center">
+              <KeyButton label="↑" :code="VK.UP" :allowed="isAllowed(VK.UP)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            </div>
+            <div class="flex gap-1">
+              <KeyButton label="←" :code="VK.LEFT" :allowed="isAllowed(VK.LEFT)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+              <KeyButton label="↓" :code="VK.DOWN" :allowed="isAllowed(VK.DOWN)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+              <KeyButton label="→" :code="VK.RIGHT" :allowed="isAllowed(VK.RIGHT)" :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== 数字小键盘区 (Grid 布局) ========== -->
+        <div class="grid grid-cols-4 gap-1 pt-2 content-start">
+          <KeyButton label="NumLk" :code="VK.NUMLK"   :allowed="isAllowed(VK.NUMLK)"   :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num/"  :code="VK.NUMDIV"  :allowed="isAllowed(VK.NUMDIV)"  :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num*"  :code="VK.NUMMUL"  :allowed="isAllowed(VK.NUMMUL)"  :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num-"  :code="VK.NUMSUB"  :allowed="isAllowed(VK.NUMSUB)"  :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+
+          <KeyButton label="Num7"  :code="VK.NUM7"    :allowed="isAllowed(VK.NUM7)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num8"  :code="VK.NUM8"    :allowed="isAllowed(VK.NUM8)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num9"  :code="VK.NUM9"    :allowed="isAllowed(VK.NUM9)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num+"  :code="VK.NUMADD"  :allowed="isAllowed(VK.NUMADD)"  width=""         :disabled="locked" @toggle="handleToggle" class="row-span-2 h-full" />
+
+          <KeyButton label="Num4"  :code="VK.NUM4"    :allowed="isAllowed(VK.NUM4)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num5"  :code="VK.NUM5"    :allowed="isAllowed(VK.NUM5)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num6"  :code="VK.NUM6"    :allowed="isAllowed(VK.NUM6)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+
+          <KeyButton label="Num1"  :code="VK.NUM1"    :allowed="isAllowed(VK.NUM1)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num2"  :code="VK.NUM2"    :allowed="isAllowed(VK.NUM2)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Num3"  :code="VK.NUM3"    :allowed="isAllowed(VK.NUM3)"    :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+          <KeyButton label="Enter" :code="VK.ENTER"   :allowed="isAllowed(VK.ENTER)"   width=""         :disabled="locked" @toggle="handleToggle" class="row-span-2 h-full" />
+
+          <KeyButton label="Num0"  :code="VK.NUM0"    :allowed="isAllowed(VK.NUM0)"    width=""         :disabled="locked" @toggle="handleToggle" class="col-span-2" />
+          <KeyButton label="Num."  :code="VK.NUMDOT"  :allowed="isAllowed(VK.NUMDOT)"  :width="W_STD" :disabled="locked" @toggle="handleToggle" />
+        </div>
+
       </div>
     </div>
   </div>

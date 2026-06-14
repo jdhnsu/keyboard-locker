@@ -32,8 +32,8 @@ function handleClick() {
 <template>
   <button
     :class="[btnClass]"
-    :style="{ width: width }"
-    class="key-btn h-12 border-b-4 rounded-DEFAULT font-label-md flex items-center justify-center select-none transition-colors"
+    :style="width ? { width } : {}"
+    class="key-btn h-10 border-b-[3px] rounded-DEFAULT font-label-md text-sm flex items-center justify-center select-none transition-colors"
     :disabled="disabled"
     @click="handleClick"
   >

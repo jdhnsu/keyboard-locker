@@ -58,6 +58,10 @@ impl Default for Config {
             (0x2E, "Delete"), (0x23, "End"), (0x22, "PgDn"),
             (0x26, "Up"), (0x28, "Down"), (0x25, "Left"), (0x27, "Right"),
             (0x90, "NumLk"), (0x91, "ScrLk"), (0x13, "Pause"),
+            (0x60, "Num0"), (0x61, "Num1"), (0x62, "Num2"), (0x63, "Num3"), (0x64, "Num4"),
+            (0x65, "Num5"), (0x66, "Num6"), (0x67, "Num7"), (0x68, "Num8"), (0x69, "Num9"),
+            (0x6A, "Num*"), (0x6B, "Num+"),
+            (0x6D, "Num-"), (0x6E, "Num."), (0x6F, "Num/"),
         ];
 
         let allowed_defaults: &[&str] = &[];
