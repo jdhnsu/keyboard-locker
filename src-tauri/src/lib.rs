@@ -1,0 +1,64 @@
+mod commands;
+mod config;
+mod locker;
+mod platform;
+mod state;
+mod tray;
+
+use commands::config::AppConfigStore;
+use commands::lifecycle::AppEngine;
+use config::ConfigStore;
+use locker::engine::{Engine, EventCallback};
+use tray::create_tray;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    let store = ConfigStore::new();
+    let config = store.load().unwrap_or_default();
+    let engine = Engine::new(config);
+
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
+        .manage(AppEngine(engine))
+        .manage(AppConfigStore(store))
+        .setup(|app| {
+            use tauri::Emitter;
+            use tauri::Manager;
+
+            let handle = app.handle().clone();
+
+            let cb: EventCallback = std::sync::Arc::new(move |event, payload| {
+                let _ = handle.emit(event, payload);
+            });
+
+            if let Some(app_engine) = app.try_state::<AppEngine>() {
+                app_engine.0.set_event_callback(cb);
+                app_engine.0.start_grab();
+                app_engine.0.start_foreground_tracker();
+            }
+
+            create_tray(app.handle())?;
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::lifecycle::lock,
+            commands::lifecycle::unlock,
+            commands::lifecycle::toggle_lock,
+            commands::lifecycle::get_status,
+            commands::lifecycle::check_permissions,
+            commands::lifecycle::open_permission_settings,
+            commands::config::get_config,
+            commands::config::update_config,
+            commands::config::add_rule,
+            commands::config::remove_rule,
+            commands::config::add_app_rule,
+            commands::config::remove_app_rule,
+            commands::config::reset_config,
+            commands::keyboard::get_key_state,
+            commands::keyboard::set_key_allowed,
+            commands::keyboard::reset_keys,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
