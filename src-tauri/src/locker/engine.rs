@@ -1,15 +1,90 @@
+use parking_lot::RwLock;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use parking_lot::RwLock;
 
 use super::combo::{ComboResult, ComboTracker};
 use super::filter;
 use super::rules::Config;
 use crate::platform::PlatformExtras;
 use crate::state::EngineState;
+
+#[cfg(target_os = "windows")]
+static SHORTCUT_KEYS: parking_lot::Mutex<Option<Vec<u32>>> = parking_lot::const_mutex(None);
+
+#[cfg(target_os = "windows")]
+const VK_SHIFT: u32 = 16;
+#[cfg(target_os = "windows")]
+const VK_CONTROL: u32 = 17;
+#[cfg(target_os = "windows")]
+const VK_MENU: u32 = 18;
+#[cfg(target_os = "windows")]
+const VK_LSHIFT: u32 = 160;
+#[cfg(target_os = "windows")]
+const VK_RSHIFT: u32 = 161;
+#[cfg(target_os = "windows")]
+const VK_LCONTROL: u32 = 162;
+#[cfg(target_os = "windows")]
+const VK_RCONTROL: u32 = 163;
+#[cfg(target_os = "windows")]
+const VK_LMENU: u32 = 164;
+#[cfg(target_os = "windows")]
+const VK_RMENU: u32 = 165;
+
+#[cfg(target_os = "windows")]
+fn normalize_modifier(vk: u32) -> Option<u32> {
+    match vk {
+        VK_LSHIFT | VK_RSHIFT | VK_SHIFT => Some(VK_SHIFT),
+        VK_LCONTROL | VK_RCONTROL | VK_CONTROL => Some(VK_CONTROL),
+        VK_LMENU | VK_RMENU | VK_MENU => Some(VK_MENU),
+        _ => None,
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn is_shortcut_key(vk: u32) -> bool {
+    let guard = SHORTCUT_KEYS.lock();
+    if let Some(ref keys) = *guard {
+        if keys.contains(&vk) {
+            return true;
+        }
+        if let Some(norm) = normalize_modifier(vk) {
+            if keys.contains(&norm) {
+                return true;
+            }
+        }
+        for &combo_vk in keys {
+            if let Some(norm) = normalize_modifier(combo_vk) {
+                if norm == normalize_modifier(vk).unwrap_or(vk) {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+pub fn update_hook_shortcut_keys(unlock_combo: &[u32], lock_combo: &[u32]) {
+    #[cfg(target_os = "windows")]
+    {
+        let mut keys: Vec<u32> = Vec::new();
+        for &vk in unlock_combo {
+            if !keys.contains(&vk) {
+                keys.push(vk);
+            }
+        }
+        for &vk in lock_combo {
+            if !keys.contains(&vk) {
+                keys.push(vk);
+            }
+        }
+        let mut guard = SHORTCUT_KEYS.lock();
+        *guard = Some(keys);
+    }
+    let _ = (unlock_combo, lock_combo);
+}
 
 pub type EventCallback = Arc<dyn Fn(&str, serde_json::Value) + Send + Sync + 'static>;
 
@@ -60,7 +135,12 @@ impl Engine {
             return Some(key_code);
         }
 
-        let allow = filter::evaluate(&state.config, state.active_app.as_deref(), key_code, modifiers);
+        let allow = filter::evaluate(
+            &state.config,
+            state.active_app.as_deref(),
+            key_code,
+            modifiers,
+        );
         if allow {
             state.total_allowed += 1;
             Some(key_code)
@@ -135,9 +215,11 @@ impl Engine {
 
     pub fn update_config(&self, config: Config) {
         let mut state = self.state.write();
-        let combo_sequence = config.unlock_combo.clone();
+        let unlock_sequence = config.unlock_combo.clone();
+        let lock_sequence = config.lock_combo.clone();
         state.config = config;
-        state.combo_tracker = ComboTracker::new(combo_sequence);
+        state.combo_tracker = ComboTracker::new(unlock_sequence);
+        state.lock_combo_tracker = ComboTracker::new(lock_sequence);
     }
 
     pub fn get_snapshot(&self) -> EngineSnapshot {
@@ -149,6 +231,7 @@ impl Engine {
             total_allowed: state.total_allowed,
             active_app: state.active_app.clone(),
             combo_progress: state.combo_tracker.progress(),
+            lock_combo_progress: state.lock_combo_tracker.progress(),
         }
     }
 
@@ -244,7 +327,10 @@ impl Engine {
     }
 
     fn emit_lock_changed(&self, locked: bool) {
-        self.emit("lock-state-changed", serde_json::json!({ "locked": locked }));
+        self.emit(
+            "lock-state-changed",
+            serde_json::json!({ "locked": locked }),
+        );
     }
 }
 
@@ -279,31 +365,21 @@ fn grab_loop_windows(
     event_cb: Option<EventCallback>,
     grab_thread_id: Arc<parking_lot::Mutex<Option<u32>>>,
 ) {
-    use windows_sys::Win32::UI::WindowsAndMessaging::{
-        SetWindowsHookExW, UnhookWindowsHookEx, CallNextHookEx,
-        GetMessageW,
-        WH_KEYBOARD_LL, WM_KEYDOWN, WM_SYSKEYDOWN,
-        WM_KEYUP, WM_SYSKEYUP,
-        MSG, HC_ACTION,
-    };
-    use windows_sys::Win32::Foundation::{LPARAM, WPARAM, LRESULT};
-    use windows_sys::Win32::UI::WindowsAndMessaging::KBDLLHOOKSTRUCT;
+    use windows_sys::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
     use windows_sys::Win32::System::Threading::GetCurrentThreadId;
+    use windows_sys::Win32::UI::WindowsAndMessaging::KBDLLHOOKSTRUCT;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        CallNextHookEx, GetMessageW, SetWindowsHookExW, UnhookWindowsHookEx, HC_ACTION, MSG,
+        WH_KEYBOARD_LL, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP,
+    };
 
-    static GLOBAL_STATE: parking_lot::Mutex<Option<Arc<RwLock<EngineState>>>> = parking_lot::const_mutex(None);
-    static GLOBAL_EVENT_CB: parking_lot::Mutex<Option<EventCallback>> = parking_lot::const_mutex(None);
+    static GLOBAL_STATE: parking_lot::Mutex<Option<Arc<RwLock<EngineState>>>> =
+        parking_lot::const_mutex(None);
+    static GLOBAL_EVENT_CB: parking_lot::Mutex<Option<EventCallback>> =
+        parking_lot::const_mutex(None);
     static GLOBAL_HOOK: parking_lot::Mutex<Option<usize>> = parking_lot::const_mutex(None);
-    static PRESSED_MODIFIERS: parking_lot::Mutex<Option<HashSet<u32>>> = parking_lot::const_mutex(None);
-
-    const VK_SHIFT: u32 = 16;
-    const VK_CONTROL: u32 = 17;
-    const VK_MENU: u32 = 18;
-    const VK_LSHIFT: u32 = 160;
-    const VK_RSHIFT: u32 = 161;
-    const VK_LCONTROL: u32 = 162;
-    const VK_RCONTROL: u32 = 163;
-    const VK_LMENU: u32 = 164;
-    const VK_RMENU: u32 = 165;
+    static PRESSED_MODIFIERS: parking_lot::Mutex<Option<HashSet<u32>>> =
+        parking_lot::const_mutex(None);
 
     unsafe extern "system" fn low_level_keyboard_proc(
         n_code: i32,
@@ -325,17 +401,35 @@ fn grab_loop_windows(
                 if let Some(ref mut mods) = *guard {
                     match vk {
                         VK_LSHIFT | VK_RSHIFT | VK_SHIFT => {
-                            if is_down { mods.insert(vk); } else { mods.remove(&vk); }
+                            if is_down {
+                                mods.insert(vk);
+                            } else {
+                                mods.remove(&vk);
+                            }
                         }
                         VK_LCONTROL | VK_RCONTROL | VK_CONTROL => {
-                            if is_down { mods.insert(vk); } else { mods.remove(&vk); }
+                            if is_down {
+                                mods.insert(vk);
+                            } else {
+                                mods.remove(&vk);
+                            }
                         }
                         VK_LMENU | VK_RMENU | VK_MENU => {
-                            if is_down { mods.insert(vk); } else { mods.remove(&vk); }
+                            if is_down {
+                                mods.insert(vk);
+                            } else {
+                                mods.remove(&vk);
+                            }
                         }
                         _ => {}
                     }
                 }
+            }
+        }
+
+        if is_down || is_up {
+            if is_shortcut_key(vk) {
+                return CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param);
             }
         }
 
@@ -347,45 +441,26 @@ fn grab_loop_windows(
             if let Some(st) = state_arc {
                 let mut s = st.write();
 
-                if !s.locked {
-                    return CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param);
-                }
-
-                let combo_result = s.combo_tracker.feed_key_press(vk);
-                if combo_result == ComboResult::Matched {
-                    s.locked = false;
-                    s.combo_tracker.reset();
-                    drop(s);
-                    let cb_opt = GLOBAL_EVENT_CB.lock();
-                    if let Some(ref cb) = *cb_opt {
-                        cb("lock-state-changed", serde_json::json!({"locked": false}));
+                if s.locked {
+                    let modifiers_guard = PRESSED_MODIFIERS.lock();
+                    let modifiers = modifiers_guard.as_ref().unwrap_or_else(|| unreachable!());
+                    let allow = filter::evaluate(&s.config, s.active_app.as_deref(), vk, modifiers);
+                    if allow {
+                        s.total_allowed += 1;
+                        drop(s);
+                        CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param)
+                    } else {
+                        s.total_blocked += 1;
+                        1
                     }
-                    return CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param);
-                }
-
-                let modifiers_guard = PRESSED_MODIFIERS.lock();
-                let modifiers = modifiers_guard.as_ref().unwrap_or_else(|| unreachable!());
-                let allow = filter::evaluate(&s.config, s.active_app.as_deref(), vk, modifiers);
-                if allow {
-                    s.total_allowed += 1;
-                    drop(s);
-                    CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param)
                 } else {
-                    s.total_blocked += 1;
-                    1
+                    s.total_allowed += 1;
+                    CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param)
                 }
             } else {
                 CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param)
             }
         } else if is_up {
-            let state_arc = {
-                let state_opt = GLOBAL_STATE.lock();
-                state_opt.clone()
-            };
-            if let Some(st) = state_arc {
-                let mut s = st.write();
-                s.combo_tracker.feed_key_release(vk);
-            }
             CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param)
         } else {
             CallNextHookEx(std::ptr::null_mut(), n_code, w_param, l_param)
@@ -405,6 +480,10 @@ fn grab_loop_windows(
     {
         let mut g = PRESSED_MODIFIERS.lock();
         *g = Some(HashSet::new());
+    }
+    {
+        let s = state.read();
+        update_hook_shortcut_keys(&s.config.unlock_combo, &s.config.lock_combo);
     }
 
     unsafe {
@@ -457,10 +536,7 @@ fn grab_loop_windows(
     }
 }
 
-fn foreground_tracker_loop(
-    state: Arc<RwLock<EngineState>>,
-    running: Arc<AtomicBool>,
-) {
+fn foreground_tracker_loop(state: Arc<RwLock<EngineState>>, running: Arc<AtomicBool>) {
     log::info!("Foreground process tracker started");
 
     let platform = crate::platform::create_platform();
@@ -485,4 +561,5 @@ pub struct EngineSnapshot {
     pub total_allowed: u64,
     pub active_app: Option<String>,
     pub combo_progress: (usize, usize),
+    pub lock_combo_progress: (usize, usize),
 }

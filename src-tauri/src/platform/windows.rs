@@ -22,14 +22,13 @@ impl PlatformExtras for WindowsPlatform {
 
 fn get_foreground_process_windows() -> Option<String> {
     unsafe {
+        use windows_sys::Win32::Foundation::CloseHandle;
+        use windows_sys::Win32::System::Threading::{
+            OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION,
+        };
         use windows_sys::Win32::UI::WindowsAndMessaging::{
             GetForegroundWindow, GetWindowThreadProcessId,
         };
-        use windows_sys::Win32::System::Threading::{
-            OpenProcess, QueryFullProcessImageNameW,
-            PROCESS_QUERY_LIMITED_INFORMATION,
-        };
-        use windows_sys::Win32::Foundation::CloseHandle;
 
         let hwnd = GetForegroundWindow();
         if hwnd.is_null() {

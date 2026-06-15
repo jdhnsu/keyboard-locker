@@ -3,6 +3,7 @@ import TopAppBar from './components/TopAppBar.vue'
 import PermissionBanner from './components/PermissionBanner.vue'
 import KeyboardMapper from './components/KeyboardMapper.vue'
 import EngineToggle from './components/EngineToggle.vue'
+import ComboRecorder from './components/ComboRecorder.vue'
 import { useKeyboardState } from './composables/useKeyboardState'
 
 const {
@@ -14,6 +15,7 @@ const {
   setKeyAllowed,
   resetConfig,
   refresh,
+  loadConfig,
 } = useKeyboardState()
 
 async function handleToggleKey(code: number) {
@@ -26,6 +28,14 @@ async function handleToggleKey(code: number) {
 
 async function handleToggleLock() {
   await toggleLock()
+}
+
+async function handleUnlockComboUpdated() {
+  await loadConfig()
+}
+
+async function handleLockComboUpdated() {
+  await loadConfig()
 }
 </script>
 
@@ -64,12 +74,32 @@ async function handleToggleLock() {
         @toggle-key="handleToggleKey"
       />
 
-      <section class="w-full">
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-md w-full">
         <EngineToggle
           :locked="status?.locked ?? false"
           :grab-active="status?.grab_active ?? false"
           @toggle="handleToggleLock"
         />
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col gap-md shadow-sm">
+          <div class="flex items-center gap-sm">
+            <span class="material-symbols-outlined text-secondary">keyboard</span>
+            <span class="font-headline-md text-headline-md text-on-surface">快捷键</span>
+          </div>
+          <div class="flex flex-col gap-sm">
+            <ComboRecorder
+              label="解锁快捷键"
+              :combo="config?.unlock_combo ?? []"
+              command-name="set_unlock_combo"
+              @updated="handleUnlockComboUpdated"
+            />
+            <ComboRecorder
+              label="锁定快捷键"
+              :combo="config?.lock_combo ?? []"
+              command-name="set_lock_combo"
+              @updated="handleLockComboUpdated"
+            />
+          </div>
+        </div>
       </section>
 
       <div v-if="status" class="flex gap-md justify-center text-label-sm text-on-surface-variant">

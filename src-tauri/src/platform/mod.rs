@@ -1,21 +1,24 @@
-#[cfg(target_os = "windows")]
-pub mod windows;
-#[cfg(target_os = "macos")]
-pub mod macos;
 #[cfg(target_os = "linux")]
 pub mod linux;
-
-#[cfg(target_os = "windows")]
-pub use windows::WindowsPlatform;
 #[cfg(target_os = "macos")]
-pub use macos::MacOSPlatform;
+pub mod macos;
+#[cfg(target_os = "windows")]
+pub mod windows;
+
 #[cfg(target_os = "linux")]
 pub use linux::LinuxPlatform;
+#[cfg(target_os = "macos")]
+pub use macos::MacOSPlatform;
+#[cfg(target_os = "windows")]
+pub use windows::WindowsPlatform;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PermissionStatus {
     Granted,
-    Denied { reason: String, fix_command: Option<String> },
+    Denied {
+        reason: String,
+        fix_command: Option<String>,
+    },
 }
 
 pub trait PlatformExtras: Send + Sync {

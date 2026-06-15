@@ -25,7 +25,8 @@ impl ConfigStore {
             return Ok(config);
         }
 
-        let content = fs::read_to_string(&self.path).map_err(|e| ConfigError::ReadError(e.to_string()))?;
+        let content =
+            fs::read_to_string(&self.path).map_err(|e| ConfigError::ReadError(e.to_string()))?;
 
         let config: Config = serde_json::from_str(&content).map_err(|e| {
             if let Some(parent) = self.path.parent() {
@@ -67,13 +68,20 @@ fn dirs_next() -> Option<PathBuf> {
     }
     #[cfg(target_os = "macos")]
     {
-        std::env::var("HOME").ok().map(|h| PathBuf::from(h).join("Library").join("Application Support"))
+        std::env::var("HOME")
+            .ok()
+            .map(|h| PathBuf::from(h).join("Library").join("Application Support"))
     }
     #[cfg(target_os = "linux")]
     {
-        std::env::var("XDG_DATA_HOME").ok().map(PathBuf::from).or_else(|| {
-            std::env::var("HOME").ok().map(|h| PathBuf::from(h).join(".local").join("share"))
-        })
+        std::env::var("XDG_DATA_HOME")
+            .ok()
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var("HOME")
+                    .ok()
+                    .map(|h| PathBuf::from(h).join(".local").join("share"))
+            })
     }
 }
 

@@ -15,9 +15,10 @@ use tray::create_tray;
 pub fn run() {
     let store = ConfigStore::new();
     let config = store.load().unwrap_or_default();
-    let engine = Engine::new(config);
+    let engine = Engine::new(config.clone());
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .manage(AppEngine(engine))
@@ -36,6 +37,12 @@ pub fn run() {
                 app_engine.0.set_event_callback(cb);
                 app_engine.0.start_grab();
                 app_engine.0.start_foreground_tracker();
+
+                let config = {
+                    let s = app_engine.0.state.read();
+                    s.config.clone()
+                };
+                locker::shortcut::register_global_shortcuts(app.handle(), &config, &app_engine.0);
             }
 
             create_tray(app.handle())?;
@@ -58,6 +65,8 @@ pub fn run() {
             commands::keyboard::get_key_state,
             commands::keyboard::set_key_allowed,
             commands::keyboard::reset_keys,
+            commands::keyboard::set_unlock_combo,
+            commands::keyboard::set_lock_combo,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

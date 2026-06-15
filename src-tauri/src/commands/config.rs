@@ -1,8 +1,8 @@
 use tauri::State;
 
+use crate::commands::lifecycle::AppEngine;
 use crate::config::ConfigStore;
 use crate::locker::rules::{AppRule, Config, KeyRule};
-use crate::commands::lifecycle::AppEngine;
 
 pub struct AppConfigStore(pub ConfigStore);
 
@@ -66,7 +66,10 @@ pub fn add_app_rule(
     app_rule: AppRule,
 ) -> Result<(), String> {
     let mut state = engine.0.state.write();
-    state.config.app_rules.retain(|r| r.process_names != app_rule.process_names);
+    state
+        .config
+        .app_rules
+        .retain(|r| r.process_names != app_rule.process_names);
     state.config.app_rules.push(app_rule);
     let config = state.config.clone();
     drop(state);
@@ -81,7 +84,10 @@ pub fn remove_app_rule(
     process_names: Vec<String>,
 ) -> Result<(), String> {
     let mut state = engine.0.state.write();
-    state.config.app_rules.retain(|r| r.process_names != process_names);
+    state
+        .config
+        .app_rules
+        .retain(|r| r.process_names != process_names);
     let config = state.config.clone();
     drop(state);
     store.0.save(&config).map_err(|e| e.to_string())?;

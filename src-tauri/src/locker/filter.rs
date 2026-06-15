@@ -17,15 +17,20 @@ pub fn evaluate(
     whitelist_match(&config.rules, key_code, modifiers)
 }
 
-fn find_app_rule<'a>(app_rules: &'a [super::rules::AppRule], process_name: &str) -> Option<&'a super::rules::AppRule> {
+fn find_app_rule<'a>(
+    app_rules: &'a [super::rules::AppRule],
+    process_name: &str,
+) -> Option<&'a super::rules::AppRule> {
     let lower = process_name.to_lowercase();
-    app_rules.iter().find(|ar| {
-        ar.process_names.iter().any(|n| n.to_lowercase() == lower)
-    })
+    app_rules
+        .iter()
+        .find(|ar| ar.process_names.iter().any(|n| n.to_lowercase() == lower))
 }
 
 fn whitelist_match(rules: &[KeyRule], key_code: u32, modifiers: &HashSet<u32>) -> bool {
-    rules.iter().any(|r| r.allowed && r.matches(key_code, modifiers))
+    rules
+        .iter()
+        .any(|r| r.allowed && r.matches(key_code, modifiers))
 }
 
 #[cfg(test)]
@@ -36,9 +41,24 @@ mod tests {
     fn test_config() -> Config {
         let mut c = Config::default();
         c.rules = vec![
-            KeyRule { key: 0x41, label: "A".into(), allowed: true, modifiers: None },
-            KeyRule { key: 0x20, label: "Space".into(), allowed: true, modifiers: None },
-            KeyRule { key: 0x53, label: "S".into(), allowed: false, modifiers: None },
+            KeyRule {
+                key: 0x41,
+                label: "A".into(),
+                allowed: true,
+                modifiers: None,
+            },
+            KeyRule {
+                key: 0x20,
+                label: "Space".into(),
+                allowed: true,
+                modifiers: None,
+            },
+            KeyRule {
+                key: 0x53,
+                label: "S".into(),
+                allowed: false,
+                modifiers: None,
+            },
         ];
         c
     }
@@ -69,14 +89,15 @@ mod tests {
     #[test]
     fn test_app_rule_priority() {
         let mut config = Config::default();
-        config.app_rules = vec![
-            AppRule {
-                process_names: vec!["notepad.exe".into()],
-                rules: vec![
-                    KeyRule { key: 0x41, label: "A".into(), allowed: true, modifiers: None },
-                ],
-            },
-        ];
+        config.app_rules = vec![AppRule {
+            process_names: vec!["notepad.exe".into()],
+            rules: vec![KeyRule {
+                key: 0x41,
+                label: "A".into(),
+                allowed: true,
+                modifiers: None,
+            }],
+        }];
         let mods = HashSet::new();
         assert!(evaluate(&config, Some("notepad.exe"), 0x41, &mods));
         assert!(!evaluate(&config, Some("notepad.exe"), 0x53, &mods));

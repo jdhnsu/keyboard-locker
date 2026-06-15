@@ -3,6 +3,7 @@ export interface Config {
   app_rules: AppRule[]
   auto_unlock_timeout: number | null
   unlock_combo: number[]
+  lock_combo: number[]
   version: number
 }
 
@@ -25,6 +26,7 @@ export interface EngineSnapshot {
   total_allowed: number
   active_app: string | null
   combo_progress: [number, number]
+  lock_combo_progress: [number, number]
 }
 
 export type KeyboardLayout = 'ansi' | 'iso' | 'laptop'

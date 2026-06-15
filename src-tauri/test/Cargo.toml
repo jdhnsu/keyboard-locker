@@ -7,6 +7,10 @@ edition = "2021"
 name = "test_keyboard_lock"
 path = "test_windows.rs"
 
+[[bin]]
+name = "test_windows_win_key"
+path = "test_windows_win_key.rs"
+
 [dependencies]
 parking_lot = "0.12"
 

@@ -96,5 +96,6 @@ export function useKeyboardState() {
     updateConfig,
     resetConfig,
     refresh,
+    loadConfig,
   }
 }

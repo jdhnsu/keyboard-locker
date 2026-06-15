@@ -6,6 +6,7 @@ src-tauri/test/target/
 # ===== Build outputs =====
 dist/
 dist-ssr/
+publish/
 
 # ===== Logs =====
 logs/

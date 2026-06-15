@@ -21,25 +21,27 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::er
     let _tray = TrayIconBuilder::new()
         .tooltip("Keyboard Locker")
         .menu(&menu)
-        .on_menu_event(|app, event| {
-            match event.id().as_ref() {
-                "toggle" => {
-                    if let Some(engine) = app.try_state::<AppEngine>() {
-                        let locked = engine.0.toggle();
-                        let _msg = if locked { "键盘已锁定" } else { "键盘已解锁" };
-                    }
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "toggle" => {
+                if let Some(engine) = app.try_state::<AppEngine>() {
+                    let locked = engine.0.toggle();
+                    let _msg = if locked {
+                        "键盘已锁定"
+                    } else {
+                        "键盘已解锁"
+                    };
                 }
-                "show" => {
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
-                }
-                "quit" => {
-                    app.exit(0);
-                }
-                _ => {}
             }
+            "show" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            "quit" => {
+                app.exit(0);
+            }
+            _ => {}
         })
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click {

@@ -18,7 +18,9 @@ impl PlatformExtras for MacOSPlatform {
     fn check_permissions(&self) -> PermissionStatus {
         PermissionStatus::Denied {
             reason: "Input Monitoring permission required".into(),
-            fix_command: Some("Open System Preferences > Privacy & Security > Input Monitoring".into()),
+            fix_command: Some(
+                "Open System Preferences > Privacy & Security > Input Monitoring".into(),
+            ),
         }
     }
 
