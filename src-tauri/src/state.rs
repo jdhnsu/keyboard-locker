@@ -14,6 +14,7 @@ pub struct EngineState {
     pub total_blocked: u64,
     pub total_allowed: u64,
     pub grab_active: bool,
+    pub lightweight_mode: bool,
 }
 
 impl EngineState {
@@ -29,6 +30,7 @@ impl EngineState {
             total_blocked: 0,
             total_allowed: 0,
             grab_active: false,
+            lightweight_mode: false,
         }
     }
 }

@@ -213,6 +213,14 @@ impl Engine {
         self.state.write().grab_active = active;
     }
 
+    pub fn set_lightweight_mode(&self, enabled: bool) {
+        self.state.write().lightweight_mode = enabled;
+    }
+
+    pub fn is_lightweight_mode(&self) -> bool {
+        self.state.read().lightweight_mode
+    }
+
     pub fn update_config(&self, config: Config) {
         let mut state = self.state.write();
         let unlock_sequence = config.unlock_combo.clone();
@@ -547,7 +555,15 @@ fn foreground_tracker_loop(state: Arc<RwLock<EngineState>>, running: Arc<AtomicB
             let mut s = state.write();
             s.active_app = app;
         }
-        thread::sleep(Duration::from_millis(500));
+        let poll_interval = {
+            let s = state.read();
+            if s.lightweight_mode {
+                Duration::from_secs(2)
+            } else {
+                Duration::from_millis(500)
+            }
+        };
+        thread::sleep(poll_interval);
     }
 
     log::info!("Foreground process tracker stopped");

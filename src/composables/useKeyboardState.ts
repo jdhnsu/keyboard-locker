@@ -9,6 +9,7 @@ export function useKeyboardState() {
   const loading = ref(true)
   const error = ref<string | null>(null)
   let unlisten: UnlistenFn | null = null
+  let unlistenFocus: UnlistenFn | null = null
 
   async function loadConfig() {
     try {
@@ -80,10 +81,16 @@ export function useKeyboardState() {
         loadStatus()
       })
     } catch {}
+    try {
+      unlistenFocus = await listen('tauri://focus', () => {
+        refresh()
+      })
+    } catch {}
   })
 
   onUnmounted(() => {
     unlisten?.()
+    unlistenFocus?.()
   })
 
   return {

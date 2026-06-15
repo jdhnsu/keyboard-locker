@@ -46,6 +46,22 @@ pub fn run() {
             }
 
             create_tray(app.handle())?;
+
+            let window = app.get_webview_window("main").expect("main window not found");
+            let app_handle_close = app.handle().clone();
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    if let Some(w) = app_handle_close.get_webview_window("main") {
+                        let _ = w.hide();
+                    }
+                    if let Some(engine) = app_handle_close.try_state::<AppEngine>() {
+                        engine.0.set_lightweight_mode(true);
+                    }
+                    log::info!("Window hidden to tray (close prevented)");
+                }
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
