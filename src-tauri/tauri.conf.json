@@ -14,8 +14,8 @@
     "windows": [
       {
         "title": "KeyLock Pro",
-        "width": 1200,
-        "height": 720,
+        "width": 1210,
+        "height": 750,
         "minWidth": 900,
         "minHeight": 480,
         "resizable": true,

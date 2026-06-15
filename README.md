@@ -14,19 +14,11 @@
 
 ## 截图
 
-![KeyLock Pro](public/icons.svg)
+![Unlock Combo](/public/image.png)
 
 ## 下载 & 安装
 
-推荐从 [Releases](https://github.com/example/keyboard-locker/releases) 页面下载对应平台的安装包：
-
-| 平台 | 格式 |
-|------|------|
-| Windows | `.msi` / `.exe` |
-| macOS | `.dmg` |
-| Linux | `.deb` / `.AppImage` |
-
-> Windows 用户首次运行可能需要以管理员权限启动，以确保键盘钩子正常工作。
+推荐从 [Releases](https://github.com/jdhnsu/keyboard-locker/releases) 页面下载对应平台的安装包。
 
 ## 使用指南
 
@@ -35,7 +27,8 @@
 1. 打开 KeyLock Pro，主界面展示完整的键盘映射图
 2. 点击 **锁定键盘** 按钮或使用系统托盘菜单，键盘即刻进入锁定状态
 3. 在锁定状态下，仅白名单中的按键能够输入；其余按键被拦截
-4. 按下 **解锁组合键** `Ctrl + Alt + L`（可自定义）即可解锁
+4. 按下 **解锁组合键** （可自定义）即可解锁
+
 
 ### 配置白名单
 

@@ -6,6 +6,9 @@ use tauri::{
 
 use crate::commands::lifecycle::AppEngine;
 
+const TRAY_ICON_DEFAULT: tauri::image::Image<'_> = tauri::include_image!("icons/tray-icon.png");
+const TRAY_ICON_LOCKED: tauri::image::Image<'_> = tauri::include_image!("icons/tray-icon-locked.png");
+
 pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::error::Error>> {
     let toggle_item = MenuItemBuilder::with_id("toggle", "锁定键盘").build(app)?;
     let show_item = MenuItemBuilder::with_id("show", "显示主窗口").build(app)?;
@@ -18,13 +21,23 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> Result<(), Box<dyn std::er
         .item(&quit_item)
         .build()?;
 
-    let _tray = TrayIconBuilder::new()
+    let _tray = TrayIconBuilder::with_id("main")
         .tooltip("Keyboard Locker")
+        .icon(TRAY_ICON_DEFAULT.clone())
         .menu(&menu)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "toggle" => {
                 if let Some(engine) = app.try_state::<AppEngine>() {
                     let locked = engine.0.toggle();
+                    // Update tray icon to reflect lock state
+                    if let Some(tray) = app.tray_by_id("main") {
+                        let icon = if locked {
+                            TRAY_ICON_LOCKED.clone()
+                        } else {
+                            TRAY_ICON_DEFAULT.clone()
+                        };
+                        let _ = tray.set_icon(Some(icon));
+                    }
                     let _msg = if locked {
                         "键盘已锁定"
                     } else {

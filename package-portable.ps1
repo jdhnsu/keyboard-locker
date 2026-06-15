@@ -33,7 +33,8 @@ Copy-Item "$projectRoot\README.md" $publishDir
 $zipPath = "$projectRoot\publish\KeyboardLocker-Portable-v0.1.0.zip"
 Remove-Item $zipPath -ErrorAction SilentlyContinue
 
-Compress-Archive -Path "$publishDir\*" -DestinationPath $zipPath
+$items = Get-ChildItem -Path $publishDir
+Compress-Archive -LiteralPath $items.FullName -DestinationPath $zipPath
 
 Write-Host ''
 Write-Host '=== Done! ==='  -ForegroundColor Green
