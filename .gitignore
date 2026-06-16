@@ -46,3 +46,4 @@ Desktop.ini
 # ===== Local config =====
 *.local
 public/BlogPage/*
+note.md
