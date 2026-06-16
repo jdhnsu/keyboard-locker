@@ -1,16 +1,88 @@
 use super::{PermissionStatus, PlatformExtras};
+use std::sync::atomic::{AtomicBool, Ordering};
 
-pub struct LinuxPlatform;
+pub struct LinuxPlatform {
+    x11_cache: parking_lot::Mutex<X11Cache>,
+}
+
+struct X11Cache {
+    display: Option<*mut x11::xlib::Display>,
+    net_pid_atom: x11::xlib::Atom,
+    last_window: x11::xlib::Window,
+    last_name: Option<String>,
+    failed: AtomicBool,
+}
+
+unsafe impl Send for X11Cache {}
+unsafe impl Sync for X11Cache {}
+
+impl X11Cache {
+    fn new() -> Self {
+        X11Cache {
+            display: None,
+            net_pid_atom: 0,
+            last_window: 0,
+            last_name: None,
+            failed: AtomicBool::new(false),
+        }
+    }
+
+    fn ensure_display(&mut self) -> Option<*mut x11::xlib::Display> {
+        if self.failed.load(Ordering::Relaxed) {
+            return None;
+        }
+        if let Some(dpy) = self.display {
+            unsafe {
+                if x11::xlib::XPending(dpy) >= 0 {
+                    return Some(dpy);
+                }
+            }
+            self.close();
+        }
+
+        unsafe {
+            let display_name = std::ffi::CString::new(":0").ok()?;
+            let dpy = x11::xlib::XOpenDisplay(display_name.as_ptr());
+            if dpy.is_null() {
+                self.failed.store(true, Ordering::Relaxed);
+                return None;
+            }
+            self.net_pid_atom = x11::xlib::XInternAtom(
+                dpy,
+                b"_NET_WM_PID\0".as_ptr() as *const i8,
+                0,
+            );
+            self.display = Some(dpy);
+            Some(dpy)
+        }
+    }
+
+    fn close(&mut self) {
+        if let Some(dpy) = self.display.take() {
+            unsafe {
+                x11::xlib::XCloseDisplay(dpy);
+            }
+        }
+    }
+}
+
+impl Drop for X11Cache {
+    fn drop(&mut self) {
+        self.close();
+    }
+}
 
 impl LinuxPlatform {
     pub fn new() -> Self {
-        LinuxPlatform
+        LinuxPlatform {
+            x11_cache: parking_lot::Mutex::new(X11Cache::new()),
+        }
     }
 }
 
 impl PlatformExtras for LinuxPlatform {
     fn get_foreground_process(&self) -> Option<String> {
-        get_foreground_process_x11()
+        get_foreground_process_x11(&self.x11_cache)
     }
 
     fn check_permissions(&self) -> PermissionStatus {
@@ -93,28 +165,26 @@ udevadm control --reload-rules 2>/dev/null || true
     fn open_permission_settings(&self) {}
 }
 
-fn get_foreground_process_x11() -> Option<String> {
+fn get_foreground_process_x11(cache: &parking_lot::Mutex<X11Cache>) -> Option<String> {
     use std::ffi::CStr;
 
-    let display_name = std::ffi::CString::new(":0").ok()?;
+    let mut cache_guard = cache.lock();
+    let display = cache_guard.ensure_display()?;
 
     unsafe {
-        let display = x11::xlib::XOpenDisplay(display_name.as_ptr());
-        if display.is_null() {
-            return None;
-        }
-
-        let _root = x11::xlib::XDefaultRootWindow(display);
-
         let mut window: x11::xlib::Window = 0;
         let mut revert_to = 0;
 
         x11::xlib::XGetInputFocus(display, &mut window, &mut revert_to);
 
         if window == 0 || window == 1 {
-            x11::xlib::XCloseDisplay(display);
             return None;
         }
+
+        if window == cache_guard.last_window {
+            return cache_guard.last_name.clone();
+        }
+        cache_guard.last_window = window;
 
         let mut pid: i64 = -1;
         let mut atom_type: x11::xlib::Atom = 0;
@@ -123,16 +193,10 @@ fn get_foreground_process_x11() -> Option<String> {
         let mut bytes_after: u64 = 0;
         let mut prop: *mut u8 = std::ptr::null_mut();
 
-        let net_pid = x11::xlib::XInternAtom(
-            display,
-            b"_NET_WM_PID\0".as_ptr() as *const i8,
-            0,
-        );
-
         let status = x11::xlib::XGetWindowProperty(
             display,
             window,
-            net_pid,
+            cache_guard.net_pid_atom,
             0,
             1,
             0,
@@ -149,7 +213,6 @@ fn get_foreground_process_x11() -> Option<String> {
             x11::xlib::XFree(prop as *mut std::ffi::c_void);
         }
 
-        let _name_ptr: *mut i8 = std::ptr::null_mut();
         let mut wm_name = x11::xlib::XTextProperty {
             value: std::ptr::null_mut(),
             encoding: 0,
@@ -158,7 +221,7 @@ fn get_foreground_process_x11() -> Option<String> {
         };
 
         let result = x11::xlib::XGetWMName(display, window, &mut wm_name);
-        let _window_name = if result != 0 && !wm_name.value.is_null() {
+        let window_name = if result != 0 && !wm_name.value.is_null() {
             let s = CStr::from_ptr(wm_name.value as *const i8)
                 .to_string_lossy()
                 .into_owned();
@@ -190,12 +253,12 @@ fn get_foreground_process_x11() -> Option<String> {
         }
 
         if result_name.is_none() {
-            if let Some(name) = _window_name {
+            if let Some(name) = window_name {
                 result_name = Some(name);
             }
         }
 
-        x11::xlib::XCloseDisplay(display);
+        cache_guard.last_name = result_name.clone();
         result_name
     }
 }

@@ -1933,6 +1933,7 @@ name = "keyboard-locker"
 version = "0.1.0"
 dependencies = [
  "evdev",
+ "libc",
  "log",
  "objc2",
  "objc2-foundation",
