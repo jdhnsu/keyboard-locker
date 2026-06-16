@@ -11,6 +11,10 @@ path = "test_windows.rs"
 name = "test_windows_win_key"
 path = "test_windows_win_key.rs"
 
+[[bin]]
+name = "test_linux"
+path = "test_linux.rs"
+
 [dependencies]
 parking_lot = "0.12"
 
@@ -20,3 +24,6 @@ windows-sys = { version = "0.59", features = [
     "Win32_System_Threading",
     "Win32_Foundation",
 ] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+evdev = "0.12"
