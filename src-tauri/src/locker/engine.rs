@@ -789,11 +789,17 @@ mod linux_keymap {
         map.get(&vk).copied()
     }
 
+    #[cfg(target_os = "windows")]
     pub fn is_modifier_vk(vk: u32) -> bool {
         matches!(
             vk,
             0xA0 | 0xA1 | 0xA2 | 0xA3 | 0xA4 | 0xA5 | 0x5B | 0x5C
         )
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn is_combo_modifier_vk(vk: u32) -> bool {
+        matches!(vk, 0xA0 | 0xA1 | 0xA2 | 0xA3 | 0xA4 | 0xA5)
     }
 }
 
@@ -804,7 +810,8 @@ fn grab_loop_linux(
     event_cb: Option<EventCallback>,
     grab_thread_id: Arc<parking_lot::Mutex<Option<u32>>>,
 ) {
-    use evdev::{uinput::VirtualDeviceBuilder, Device, EventType, Key};
+    use evdev::{uinput::VirtualDeviceBuilder, Device, EventType, InputEvent, Key};
+    use std::os::unix::io::AsRawFd;
 
     let mut keyboard_devices: Vec<Device> = Vec::new();
 
@@ -830,16 +837,14 @@ fn grab_loop_linux(
         return;
     }
 
-    let supported_keys = match keyboard_devices[0].supported_keys() {
-        Some(keys) => keys,
-        None => {
-            log::error!("No supported keys found on device");
-            if let Some(ref cb) = event_cb {
-                cb("grab-error", serde_json::json!({"error": "No supported keys found on device"}));
+    let mut all_supported_keys = evdev::AttributeSet::<Key>::new();
+    for device in &keyboard_devices {
+        if let Some(keys) = device.supported_keys() {
+            for key in keys.iter() {
+                all_supported_keys.insert(key);
             }
-            return;
         }
-    };
+    }
 
     let virtual_dev = match VirtualDeviceBuilder::new() {
         Ok(builder) => builder,
@@ -854,7 +859,7 @@ fn grab_loop_linux(
 
     let virtual_dev = match virtual_dev
         .name("KeyLock Pro Virtual Keyboard")
-        .with_keys(supported_keys)
+        .with_keys(&all_supported_keys)
     {
         Ok(builder) => match builder.build() {
             Ok(d) => {
@@ -891,7 +896,7 @@ fn grab_loop_linux(
         }
     }
 
-    if grabbed_count == 0 && keyboard_devices.len() > 0 {
+    if grabbed_count == 0 && !keyboard_devices.is_empty() {
         if let Some(ref cb) = event_cb {
             cb("grab-warning", serde_json::json!({
                 "warning": "No devices could be exclusively grabbed",
@@ -915,22 +920,61 @@ fn grab_loop_linux(
         keyboard_devices.len()
     );
 
+    let mut poll_fds: Vec<libc::pollfd> = keyboard_devices
+        .iter()
+        .map(|d| libc::pollfd {
+            fd: d.as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        })
+        .collect();
+
+    let mut pending_events: Vec<Vec<InputEvent>> = vec![Vec::new(); keyboard_devices.len()];
+
     while running.load(Ordering::SeqCst) {
-        for device in &mut keyboard_devices {
-            let events: Vec<evdev::InputEvent> = match device.fetch_events() {
-                Ok(iter) => iter.collect(),
+        let ret = unsafe {
+            libc::poll(poll_fds.as_mut_ptr(), poll_fds.len() as libc::nfds_t, 50)
+        };
+
+        if ret < 0 {
+            let err = std::io::Error::last_os_error();
+            if err.kind() != std::io::ErrorKind::Interrupted {
+                log::error!("poll() failed: {}", err);
+            }
+            thread::sleep(Duration::from_millis(10));
+            continue;
+        }
+
+        for (i, device) in keyboard_devices.iter_mut().enumerate() {
+            if poll_fds[i].revents & libc::POLLIN == 0 {
+                continue;
+            }
+            poll_fds[i].revents = 0;
+
+            let device_name = device.name().unwrap_or("?").to_string();
+            match device.fetch_events() {
+                Ok(iter) => {
+                    pending_events[i].extend(iter);
+                }
                 Err(e) => {
                     if e.kind() != std::io::ErrorKind::WouldBlock {
-                        log::warn!("Error reading events: {}", e);
+                        log::warn!("Error reading events from '{}': {}", device_name, e);
                     }
-                    continue;
                 }
-            };
+            }
+        }
+
+        for (i, _device) in keyboard_devices.iter_mut().enumerate() {
+            let events: Vec<InputEvent> = std::mem::take(&mut pending_events[i]);
+            if events.is_empty() {
+                continue;
+            }
+
+            let mut batch_to_emit: Vec<InputEvent> = Vec::with_capacity(events.len());
 
             for ev in events {
                 if ev.event_type() != EventType::KEY {
-                    let mut uinput_guard = uinput.lock();
-                    let _ = uinput_guard.emit(&[ev]);
+                    batch_to_emit.push(ev);
                     continue;
                 }
 
@@ -941,8 +985,7 @@ fn grab_loop_linux(
                 let is_repeat = value == 2;
 
                 let Some(vk) = linux_keymap::evdev_to_vk(code) else {
-                    let mut uinput_guard = uinput.lock();
-                    let _ = uinput_guard.emit(&[ev]);
+                    batch_to_emit.push(ev);
                     continue;
                 };
 
@@ -971,14 +1014,10 @@ fn grab_loop_linux(
                             &mods,
                         );
                         if allow {
-                            drop(s);
-                            let mut uinput_guard = uinput.lock();
-                            let _ = uinput_guard.emit(&[ev]);
+                            batch_to_emit.push(ev);
                         }
                     } else {
-                        drop(s);
-                        let mut uinput_guard = uinput.lock();
-                        let _ = uinput_guard.emit(&[ev]);
+                        batch_to_emit.push(ev);
                     }
                     continue;
                 }
@@ -987,7 +1026,9 @@ fn grab_loop_linux(
                     let s = state.read();
                     let unlock = &s.config.unlock_combo;
                     let lock = &s.config.lock_combo;
-                    unlock.contains(&vk) || lock.contains(&vk) || linux_keymap::is_modifier_vk(vk)
+                    unlock.contains(&vk)
+                        || lock.contains(&vk)
+                        || linux_keymap::is_combo_modifier_vk(vk)
                 };
 
                 if is_shortcut {
@@ -1024,16 +1065,14 @@ fn grab_loop_linux(
                         }
                     }
 
-                    let mut uinput_guard = uinput.lock();
-                    let _ = uinput_guard.emit(&[ev]);
+                    batch_to_emit.push(ev);
                     continue;
                 }
 
                 let s = state.read();
                 if !s.locked {
                     drop(s);
-                    let mut uinput_guard = uinput.lock();
-                    let _ = uinput_guard.emit(&[ev]);
+                    batch_to_emit.push(ev);
                     continue;
                 }
 
@@ -1046,17 +1085,22 @@ fn grab_loop_linux(
                     let mut s = state.write();
                     s.total_allowed += 1;
                     drop(s);
-                    let mut uinput_guard = uinput.lock();
-                    let _ = uinput_guard.emit(&[ev]);
+                    batch_to_emit.push(ev);
                 } else {
+                    drop(s);
                     let mut s = state.write();
                     s.total_blocked += 1;
                     drop(s);
                 }
             }
-        }
 
-        thread::sleep(Duration::from_millis(1));
+            if !batch_to_emit.is_empty() {
+                let mut uinput_guard = uinput.lock();
+                if let Err(e) = uinput_guard.emit(&batch_to_emit) {
+                    log::warn!("Failed to emit events to uinput: {}", e);
+                }
+            }
+        }
     }
 
     for device in &mut keyboard_devices {
