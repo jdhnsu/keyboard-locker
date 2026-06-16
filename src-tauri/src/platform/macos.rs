@@ -21,6 +21,7 @@ impl PlatformExtras for MacOSPlatform {
             fix_command: Some(
                 "Open System Preferences > Privacy & Security > Input Monitoring".into(),
             ),
+            can_auto_fix: false,
         }
     }
 
