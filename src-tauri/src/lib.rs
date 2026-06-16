@@ -9,6 +9,7 @@ use commands::config::AppConfigStore;
 use commands::lifecycle::AppEngine;
 use config::ConfigStore;
 use locker::engine::{Engine, EventCallback};
+use tauri::Manager;
 use tray::create_tray;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,7 +18,19 @@ pub fn run() {
     let config = store.load().unwrap_or_default();
     let engine = Engine::new(config.clone());
 
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }));
+    }
+
+    builder
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
@@ -25,7 +38,6 @@ pub fn run() {
         .manage(AppConfigStore(store))
         .setup(|app| {
             use tauri::Emitter;
-            use tauri::Manager;
 
             let handle = app.handle().clone();
 

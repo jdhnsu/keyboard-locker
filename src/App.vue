@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import TopAppBar from './components/TopAppBar.vue'
+import TitleBar from './components/TitleBar.vue'
 import PermissionBanner from './components/PermissionBanner.vue'
 import KeyboardMapper from './components/KeyboardMapper.vue'
 import EngineToggle from './components/EngineToggle.vue'
@@ -40,18 +40,18 @@ async function handleLockComboUpdated() {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-background text-on-background font-body-md antialiased">
-    <TopAppBar
+  <div class="h-screen flex flex-col bg-background text-on-background font-body-md antialiased rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_2px_32px_rgba(0,0,0,0.10),0_0_0_1px_rgba(0,0,0,0.06)]">
+    <TitleBar
       :locked="status?.locked ?? false"
       @toggle-lock="handleToggleLock"
     />
-    <PermissionBanner />
+    <PermissionBanner class="shrink-0" />
 
-    <main v-if="loading" class="flex-1 flex items-center justify-center">
+    <main v-if="loading" class="flex-1 min-h-0 flex items-center justify-center">
       <p class="text-on-surface-variant font-body-lg">加载中...</p>
     </main>
 
-    <main v-else-if="error" class="flex-1 flex flex-col items-center justify-center gap-md p-md">
+    <main v-else-if="error" class="flex-1 min-h-0 flex flex-col items-center justify-center gap-md p-md">
       <p class="text-error font-body-lg">加载失败: {{ error }}</p>
       <button
         @click="refresh"
@@ -67,7 +67,7 @@ async function handleLockComboUpdated() {
       </button>
     </main>
 
-    <main v-else class="flex-1 max-w-7xl mx-auto w-full flex flex-col p-md gap-md">
+    <main v-else class="flex-1 min-h-0 max-w-7xl mx-auto w-full flex flex-col p-md gap-md overflow-y-auto">
       <KeyboardMapper
         :rules="config?.rules ?? []"
         :locked="status?.locked ?? false"
