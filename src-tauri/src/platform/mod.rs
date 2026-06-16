@@ -18,12 +18,16 @@ pub enum PermissionStatus {
     Denied {
         reason: String,
         fix_command: Option<String>,
+        can_auto_fix: bool,
     },
 }
 
 pub trait PlatformExtras: Send + Sync {
     fn get_foreground_process(&self) -> Option<String>;
     fn check_permissions(&self) -> PermissionStatus;
+    fn try_fix_permissions(&self) -> bool {
+        false
+    }
     fn open_permission_settings(&self);
 }
 
