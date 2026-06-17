@@ -15,7 +15,9 @@ const emit = defineEmits<{
 
 const btnClass = computed(() => {
   if (props.disabled) {
-    return 'bg-surface-container text-on-surface-variant border-outline-variant cursor-not-allowed opacity-50'
+    return props.allowed
+      ? 'bg-green-600/25 text-green-800 border-green-800/40 cursor-not-allowed'
+      : 'bg-error/25 text-on-error/70 border-error-container/40 cursor-not-allowed'
   }
   return props.allowed
     ? 'bg-green-600 text-white border-green-800'
