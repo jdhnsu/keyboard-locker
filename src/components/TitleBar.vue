@@ -8,6 +8,7 @@ defineProps<{
 
 const emit = defineEmits<{
   toggleLock: []
+  showDevices: []
 }>()
 
 const processing = ref(false)
@@ -46,6 +47,14 @@ async function handleLock() {
     </div>
 
     <div class="flex items-center gap-xs">
+      <button
+        class="flex items-center justify-center w-8 h-6 rounded-DEFAULT hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors"
+        @click="$emit('showDevices')"
+        title="设备管理"
+      >
+        <span class="material-symbols-outlined text-sm">settings</span>
+      </button>
+
       <button
         @click="handleLock"
         :disabled="processing"

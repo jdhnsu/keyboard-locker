@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import TitleBar from './components/TitleBar.vue'
 import PermissionBanner from './components/PermissionBanner.vue'
 import KeyboardMapper from './components/KeyboardMapper.vue'
 import EngineToggle from './components/EngineToggle.vue'
 import ComboRecorder from './components/ComboRecorder.vue'
 import StatusBar from './components/StatusBar.vue'
+import DeviceManager from './components/DeviceManager.vue'
 import { useKeyboardState } from './composables/useKeyboardState'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
@@ -27,6 +28,16 @@ const {
   refresh,
   loadConfig,
 } = useKeyboardState()
+
+const view = ref<'main' | 'devices'>('main')
+
+function showDevices() {
+  view.value = 'devices'
+}
+
+function showMain() {
+  view.value = 'main'
+}
 
 async function handleToggleKey(code: number) {
   if (!config.value) return
@@ -51,69 +62,74 @@ async function handleLockComboUpdated() {
 
 <template>
   <div class="h-screen flex flex-col bg-background text-on-background font-body-md antialiased rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_2px_32px_rgba(0,0,0,0.10),0_0_0_1px_rgba(0,0,0,0.06)]" style="isolation: isolate; backface-visibility: hidden">
-    <TitleBar
-      :locked="status?.locked ?? false"
-      @toggle-lock="handleToggleLock"
-    />
-    <PermissionBanner class="shrink-0" />
-
-    <main v-if="loading" class="flex-1 min-h-0 flex items-center justify-center">
-      <p class="text-on-surface-variant font-body-lg">加载中...</p>
-    </main>
-
-    <main v-else-if="error" class="flex-1 min-h-0 flex flex-col items-center justify-center gap-md p-md">
-      <p class="text-error font-body-lg">加载失败: {{ error }}</p>
-      <button
-        @click="refresh"
-        class="px-md py-xs bg-primary text-on-primary rounded-DEFAULT font-label-md hover:bg-primary/90"
-      >
-        重试
-      </button>
-      <button
-        @click="resetConfig"
-        class="px-md py-xs bg-surface-container text-on-surface-variant border border-outline-variant rounded-DEFAULT font-label-md"
-      >
-        重置配置
-      </button>
-    </main>
-
-    <main v-else class="flex-1 min-h-0 max-w-7xl mx-auto w-full flex flex-col p-md gap-md overflow-y-auto">
-      <KeyboardMapper
-        :rules="config?.rules ?? []"
+    <template v-if="view === 'main'">
+      <TitleBar
         :locked="status?.locked ?? false"
-        @toggle-key="handleToggleKey"
+        @toggle-lock="handleToggleLock"
+        @show-devices="showDevices"
       />
+      <PermissionBanner class="shrink-0" />
 
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-md w-full">
-        <EngineToggle
+      <main v-if="loading" class="flex-1 min-h-0 flex items-center justify-center">
+        <p class="text-on-surface-variant font-body-lg">加载中...</p>
+      </main>
+
+      <main v-else-if="error" class="flex-1 min-h-0 flex flex-col items-center justify-center gap-md p-md">
+        <p class="text-error font-body-lg">加载失败: {{ error }}</p>
+        <button
+          @click="refresh"
+          class="px-md py-xs bg-primary text-on-primary rounded-DEFAULT font-label-md hover:bg-primary/90"
+        >
+          重试
+        </button>
+        <button
+          @click="resetConfig"
+          class="px-md py-xs bg-surface-container text-on-surface-variant border border-outline-variant rounded-DEFAULT font-label-md"
+        >
+          重置配置
+        </button>
+      </main>
+
+      <main v-else class="flex-1 min-h-0 max-w-7xl mx-auto w-full flex flex-col p-md gap-md overflow-y-auto">
+        <KeyboardMapper
+          :rules="config?.rules ?? []"
           :locked="status?.locked ?? false"
-          :grab-active="status?.grab_active ?? false"
-          @toggle="handleToggleLock"
+          @toggle-key="handleToggleKey"
         />
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col gap-md shadow-sm">
-          <div class="flex items-center gap-sm">
-            <span class="material-symbols-outlined text-secondary">keyboard</span>
-            <span class="font-headline-md text-headline-md text-on-surface">快捷键</span>
-          </div>
-          <div class="flex flex-col gap-sm">
-            <ComboRecorder
-              label="解锁快捷键"
-              :combo="config?.unlock_combo ?? []"
-              command-name="set_unlock_combo"
-              @updated="handleUnlockComboUpdated"
-            />
-            <ComboRecorder
-              label="锁定快捷键"
-              :combo="config?.lock_combo ?? []"
-              command-name="set_lock_combo"
-              @updated="handleLockComboUpdated"
-            />
-          </div>
-        </div>
-      </section>
 
-      <StatusBar />
-    </main>
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-md w-full">
+          <EngineToggle
+            :locked="status?.locked ?? false"
+            :grab-active="status?.grab_active ?? false"
+            @toggle="handleToggleLock"
+          />
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col gap-md shadow-sm">
+            <div class="flex items-center gap-sm">
+              <span class="material-symbols-outlined text-secondary">keyboard</span>
+              <span class="font-headline-md text-headline-md text-on-surface">快捷键</span>
+            </div>
+            <div class="flex flex-col gap-sm">
+              <ComboRecorder
+                label="解锁快捷键"
+                :combo="config?.unlock_combo ?? []"
+                command-name="set_unlock_combo"
+                @updated="handleUnlockComboUpdated"
+              />
+              <ComboRecorder
+                label="锁定快捷键"
+                :combo="config?.lock_combo ?? []"
+                command-name="set_lock_combo"
+                @updated="handleLockComboUpdated"
+              />
+            </div>
+          </div>
+        </section>
+
+        <StatusBar />
+      </main>
+    </template>
+
+    <DeviceManager v-else @close="showMain" />
   </div>
 </template>
 

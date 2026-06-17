@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::device_manager::KeyboardDeviceConfig;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyRule {
     pub key: u32,
@@ -28,6 +30,8 @@ pub struct Config {
     #[serde(default = "default_lock_combo")]
     pub lock_combo: Vec<u32>,
     pub version: u32,
+    #[serde(default)]
+    pub keyboard_devices: Vec<KeyboardDeviceConfig>,
 }
 
 fn default_lock_combo() -> Vec<u32> {
@@ -158,7 +162,8 @@ impl Default for Config {
             auto_unlock_timeout: Some(300),
             unlock_combo: vec![0xA2, 0xA4, 0x4C],
             lock_combo: vec![0xA2, 0xA4, 0x4B],
-            version: 2,
+            version: 3,
+            keyboard_devices: Vec::new(),
         }
     }
 }

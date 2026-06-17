@@ -5,6 +5,7 @@ export interface Config {
   unlock_combo: number[]
   lock_combo: number[]
   version: number
+  keyboard_devices: KeyboardDeviceConfig[]
 }
 
 export interface KeyRule {
@@ -35,4 +36,21 @@ export interface KeyDef {
   code: number
   label: string
   width: string
+}
+
+export interface KeyboardDeviceConfig {
+  instance_id: string
+  alias: string
+  enabled: boolean
+  is_target: boolean
+}
+
+export interface KeyboardDeviceInfo {
+  instance_id: string
+  alias: string
+  enabled: boolean
+  is_target: boolean
+  name: string
+  vendor_id: number
+  product_id: number
 }

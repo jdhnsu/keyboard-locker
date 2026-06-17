@@ -6,8 +6,10 @@ mod state;
 mod tray;
 
 use commands::config::AppConfigStore;
+use commands::device::AppDeviceIdentifier;
 use commands::lifecycle::AppEngine;
 use config::ConfigStore;
+use locker::device_manager::DeviceIdentifier;
 use locker::engine::{Engine, EventCallback};
 use tauri::Manager;
 use tray::create_tray;
@@ -36,6 +38,9 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .manage(AppEngine(engine))
         .manage(AppConfigStore(store))
+        .manage(AppDeviceIdentifier(parking_lot::Mutex::new(
+            DeviceIdentifier::new(),
+        )))
         .setup(|app| {
             use tauri::Emitter;
 
@@ -97,6 +102,10 @@ pub fn run() {
             commands::keyboard::reset_keys,
             commands::keyboard::set_unlock_combo,
             commands::keyboard::set_lock_combo,
+            commands::device::enumerate_keyboards,
+            commands::device::update_keyboard_device,
+            commands::device::identify_keyboard_start,
+            commands::device::identify_keyboard_stop,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
