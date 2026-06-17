@@ -110,7 +110,7 @@ onUnmounted(async () => {
 
 <template>
   <div class="flex flex-col h-full">
-    <header class="flex items-center gap-sm px-md py-sm border-b border-outline-variant shrink-0">
+    <header data-tauri-drag-region class="flex items-center gap-sm px-md py-sm border-b border-outline-variant shrink-0">
       <button
         class="flex items-center gap-xs text-on-surface-variant hover:text-on-surface transition-colors font-label-md"
         @click="$emit('close')"

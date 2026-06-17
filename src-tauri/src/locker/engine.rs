@@ -182,6 +182,7 @@ impl Engine {
         thread::Builder::new()
             .name("keylock-grab".into())
             .spawn(move || {
+                thread::sleep(Duration::from_millis(1000));
                 grab_loop_impl(state, running, event_cb, grab_thread_id);
             })
             .expect("failed to spawn grab thread");

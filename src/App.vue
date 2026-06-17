@@ -61,7 +61,7 @@ async function handleLockComboUpdated() {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-background text-on-background font-body-md antialiased rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_2px_32px_rgba(0,0,0,0.10),0_0_0_1px_rgba(0,0,0,0.06)]" style="isolation: isolate; backface-visibility: hidden">
+  <div class="h-screen flex flex-col bg-background text-on-background font-body-md antialiased rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.12),0_2px_16px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]" style="isolation: isolate; backface-visibility: hidden">
     <template v-if="view === 'main'">
       <TitleBar
         :locked="status?.locked ?? false"
