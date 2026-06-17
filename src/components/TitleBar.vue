@@ -40,7 +40,7 @@ async function handleLock() {
     data-tauri-drag-region
     class="flex items-center justify-between h-8 px-sm select-none bg-surface border-b border-outline-variant shrink-0"
   >
-    <div data-tauri-drag-region class="flex items-center gap-xs pl-xs">
+    <div class="flex items-center gap-xs pl-xs">
       <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings: 'FILL' 1">lock</span>
       <span class="font-label-md text-label-md text-on-surface font-bold">KeyLock Pro</span>
     </div>
@@ -86,3 +86,10 @@ async function handleLock() {
     </div>
   </header>
 </template>
+
+<style scoped>
+header[data-tauri-drag-region] {
+  will-change: transform;
+  isolation: isolate;
+}
+</style>

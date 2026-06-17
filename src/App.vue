@@ -4,6 +4,7 @@ import PermissionBanner from './components/PermissionBanner.vue'
 import KeyboardMapper from './components/KeyboardMapper.vue'
 import EngineToggle from './components/EngineToggle.vue'
 import ComboRecorder from './components/ComboRecorder.vue'
+import StatusBar from './components/StatusBar.vue'
 import { useKeyboardState } from './composables/useKeyboardState'
 
 const {
@@ -102,10 +103,7 @@ async function handleLockComboUpdated() {
         </div>
       </section>
 
-      <div v-if="status" class="flex gap-md justify-center text-label-sm text-on-surface-variant">
-        <span>拦截: {{ status.total_blocked }}</span>
-        <span>放行: {{ status.total_allowed }}</span>
-      </div>
+      <StatusBar />
     </main>
   </div>
 </template>

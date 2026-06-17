@@ -83,7 +83,8 @@ export function useKeyboardState() {
     } catch {}
     try {
       unlistenFocus = await listen('tauri://focus', () => {
-        refresh()
+        loadStatus()
+        loadConfig()
       })
     } catch {}
   })
