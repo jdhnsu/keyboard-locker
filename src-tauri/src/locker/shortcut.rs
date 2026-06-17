@@ -109,8 +109,6 @@ pub fn register_global_shortcuts(
 
     let _ = global_shortcut.unregister_all();
 
-    crate::locker::engine::update_hook_shortcut_keys(&config.unlock_combo, &config.lock_combo);
-
     let unlock_str = combo_to_shortcut_str(&config.unlock_combo);
     let lock_str = combo_to_shortcut_str(&config.lock_combo);
 
