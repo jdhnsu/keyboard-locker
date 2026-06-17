@@ -110,14 +110,16 @@
 }
 
 html {
-  background: #f8f9ff;
+  background: transparent;
   overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK SC", sans-serif;
   margin: 0;
-  background: #f8f9ff;
+  background: transparent;
   overflow: hidden;
   border-radius: 12px;
 }

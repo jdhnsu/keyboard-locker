@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import TitleBar from './components/TitleBar.vue'
 import PermissionBanner from './components/PermissionBanner.vue'
 import KeyboardMapper from './components/KeyboardMapper.vue'
@@ -6,6 +7,14 @@ import EngineToggle from './components/EngineToggle.vue'
 import ComboRecorder from './components/ComboRecorder.vue'
 import StatusBar from './components/StatusBar.vue'
 import { useKeyboardState } from './composables/useKeyboardState'
+import { getCurrentWindow } from '@tauri-apps/api/window'
+
+const appWindow = getCurrentWindow()
+onMounted(async () => {
+  try {
+    await appWindow.setBackgroundColor({ red: 248, green: 249, blue: 255, alpha: 255 })
+  } catch {}
+})
 
 const {
   config,
@@ -41,7 +50,7 @@ async function handleLockComboUpdated() {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-background text-on-background font-body-md antialiased rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_2px_32px_rgba(0,0,0,0.10),0_0_0_1px_rgba(0,0,0,0.06)]">
+  <div class="h-screen flex flex-col bg-background text-on-background font-body-md antialiased rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_2px_32px_rgba(0,0,0,0.10),0_0_0_1px_rgba(0,0,0,0.06)]" style="isolation: isolate; backface-visibility: hidden">
     <TitleBar
       :locked="status?.locked ?? false"
       @toggle-lock="handleToggleLock"
