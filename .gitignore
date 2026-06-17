@@ -47,3 +47,4 @@ Desktop.ini
 *.local
 public/BlogPage/*
 note.md
+src-tauri/tests/target/*
