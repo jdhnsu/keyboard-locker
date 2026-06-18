@@ -8,7 +8,6 @@ use tauri::Emitter;
 pub struct KeyboardDeviceConfig {
     pub instance_id: String,
     pub alias: String,
-    pub enabled: bool,
     pub is_target: bool,
 }
 
@@ -17,7 +16,6 @@ impl Default for KeyboardDeviceConfig {
         KeyboardDeviceConfig {
             instance_id: String::new(),
             alias: String::new(),
-            enabled: true,
             is_target: false,
         }
     }
@@ -27,7 +25,6 @@ impl Default for KeyboardDeviceConfig {
 pub struct KeyboardDeviceInfo {
     pub instance_id: String,
     pub alias: String,
-    pub enabled: bool,
     pub is_target: bool,
     #[serde(skip)]
     pub handle: isize,
@@ -56,7 +53,6 @@ pub fn merge_device_config(
         Some(c) => KeyboardDeviceInfo {
             instance_id,
             alias: c.alias.clone(),
-            enabled: c.enabled,
             is_target: c.is_target,
             handle,
             name,
@@ -66,7 +62,6 @@ pub fn merge_device_config(
         None => KeyboardDeviceInfo {
             instance_id,
             alias: String::new(),
-            enabled: true,
             is_target: false,
             handle,
             name,

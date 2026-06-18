@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { KeyboardDeviceInfo, KeyboardDeviceConfig } from '../types'
+import type { KeyboardDeviceInfo, KeyboardDeviceConfig, Config } from '../types'
 
 const emit = defineEmits<{
   close: []
@@ -13,6 +13,7 @@ const loading = ref(true)
 const identifying = ref(false)
 const highlightedId = ref<string | null>(null)
 const error = ref<string | null>(null)
+const blockAllDevices = ref(false)
 let unlistenTapped: UnlistenFn | null = null
 
 async function loadDevices() {
@@ -20,10 +21,23 @@ async function loadDevices() {
     loading.value = true
     error.value = null
     devices.value = await invoke<KeyboardDeviceInfo[]>('enumerate_keyboards')
+    const config = await invoke<Config>('get_config')
+    blockAllDevices.value = config.block_all_devices ?? false
   } catch (e) {
     error.value = String(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function toggleBlockAllDevices(value: boolean) {
+  try {
+    const config = await invoke<Config>('get_config')
+    await invoke('update_config', { config: { ...config, block_all_devices: value } })
+    blockAllDevices.value = value
+    error.value = null
+  } catch (e) {
+    error.value = String(e)
   }
 }
 
@@ -76,15 +90,14 @@ function handleTapped(payload: { instance_id: string }) {
   }, 2000)
 }
 
-async function handleSave(device: KeyboardDeviceInfo) {
-  try {
-    const config: KeyboardDeviceConfig = {
-      instance_id: device.instance_id,
-      alias: device.alias,
-      enabled: device.enabled,
-      is_target: device.is_target,
-    }
-    await invoke('update_keyboard_device', { device: config })
+  async function handleSave(device: KeyboardDeviceInfo) {
+    try {
+      const config: KeyboardDeviceConfig = {
+        instance_id: device.instance_id,
+        alias: device.alias,
+        is_target: device.is_target,
+      }
+      await invoke('update_keyboard_device', { device: config })
     error.value = null
   } catch (e) {
     error.value = String(e)
@@ -145,6 +158,27 @@ onUnmounted(async () => {
           </span>
           {{ identifying ? '停止识别' : '开始识别' }}
         </button>
+      </div>
+
+      <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex items-center justify-between gap-md">
+        <div class="flex items-center gap-sm text-on-surface-variant font-body-md">
+          <span class="material-symbols-outlined text-base">block</span>
+          <div class="flex flex-col">
+            <span class="text-on-surface font-label-md">一键拦截所有键盘</span>
+            <span class="text-label-sm">不读取设备列表，锁定后强制拦截全部键盘（推荐作为兜底保险）</span>
+          </div>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+          <input
+            type="checkbox"
+            class="sr-only peer"
+            :checked="blockAllDevices"
+            @change="toggleBlockAllDevices(($event.target as HTMLInputElement).checked)"
+          />
+          <div
+            class="w-11 h-6 bg-outline-variant rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5"
+          ></div>
+        </label>
       </div>
 
       <div v-if="loading" class="flex items-center justify-center py-xl text-on-surface-variant font-body-lg">
@@ -209,20 +243,11 @@ onUnmounted(async () => {
           <label class="flex items-center gap-xs cursor-pointer select-none">
             <input
               type="checkbox"
-              :checked="device.enabled"
-              @change="device.enabled = ($event.target as HTMLInputElement).checked; handleSave(device)"
-              class="w-4 h-4 accent-primary"
-            />
-            <span class="font-label-sm text-on-surface-variant">参与锁定</span>
-          </label>
-          <label class="flex items-center gap-xs cursor-pointer select-none">
-            <input
-              type="checkbox"
               :checked="device.is_target"
               @change="device.is_target = ($event.target as HTMLInputElement).checked; handleSave(device)"
-              class="w-4 h-4 accent-secondary"
+              class="w-4 h-4 accent-primary"
             />
-            <span class="font-label-sm text-on-surface-variant">目标键盘</span>
+            <span class="font-label-sm text-on-surface-variant">目标键盘（锁定后完全拦截此键盘）</span>
           </label>
         </div>
       </div>

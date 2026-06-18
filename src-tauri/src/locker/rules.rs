@@ -32,6 +32,8 @@ pub struct Config {
     pub version: u32,
     #[serde(default)]
     pub keyboard_devices: Vec<KeyboardDeviceConfig>,
+    #[serde(default)]
+    pub block_all_devices: bool,
 }
 
 fn default_lock_combo() -> Vec<u32> {
@@ -164,6 +166,7 @@ impl Default for Config {
             lock_combo: vec![0xA2, 0xA4, 0x4B],
             version: 3,
             keyboard_devices: Vec::new(),
+            block_all_devices: false,
         }
     }
 }

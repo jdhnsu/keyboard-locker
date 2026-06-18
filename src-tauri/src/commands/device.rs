@@ -31,14 +31,15 @@ pub fn update_keyboard_device(
     let devices = &mut state.config.keyboard_devices;
     if let Some(existing) = devices.iter_mut().find(|d| d.instance_id == device.instance_id) {
         existing.alias = device.alias;
-        existing.enabled = device.enabled;
         existing.is_target = device.is_target;
     } else {
         devices.push(device);
     }
     let config = state.config.clone();
     drop(state);
-    store.0.save(&config).map_err(|e| e.to_string())
+    store.0.save(&config).map_err(|e| e.to_string())?;
+    engine.0.restart_grab();
+    Ok(())
 }
 
 #[tauri::command]

@@ -6,6 +6,7 @@ export interface Config {
   lock_combo: number[]
   version: number
   keyboard_devices: KeyboardDeviceConfig[]
+  block_all_devices?: boolean
 }
 
 export interface KeyRule {
@@ -41,14 +42,12 @@ export interface KeyDef {
 export interface KeyboardDeviceConfig {
   instance_id: string
   alias: string
-  enabled: boolean
   is_target: boolean
 }
 
 export interface KeyboardDeviceInfo {
   instance_id: string
   alias: string
-  enabled: boolean
   is_target: boolean
   name: string
   vendor_id: number
