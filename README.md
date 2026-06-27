@@ -18,7 +18,8 @@
 
 ### 主界面
 
-![自定义解锁组合](/public/image.png)
+![自定义解锁组合](<img width="1649" height="1010" alt="image" src="https://github.com/user-attachments/assets/1dff4602-d317-4510-be50-099eca328580" />
+)
 
 ## 下载安装
 
