@@ -6,15 +6,21 @@ import KeyboardMapper from './components/KeyboardMapper.vue'
 import EngineToggle from './components/EngineToggle.vue'
 import ComboRecorder from './components/ComboRecorder.vue'
 import StatusBar from './components/StatusBar.vue'
-import DeviceManager from './components/DeviceManager.vue'
 import { useKeyboardState } from './composables/useKeyboardState'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
 const appWindow = getCurrentWindow()
+const maximized = ref(false)
+
+async function updateMaximized() {
+  maximized.value = await appWindow.isMaximized()
+}
+
 onMounted(async () => {
-  try {
-    await appWindow.setBackgroundColor({ red: 248, green: 249, blue: 255, alpha: 255 })
-  } catch {}
+  await updateMaximized()
+  await appWindow.onResized(() => {
+    updateMaximized()
+  })
 })
 
 const {
@@ -28,16 +34,6 @@ const {
   refresh,
   loadConfig,
 } = useKeyboardState()
-
-const view = ref<'main' | 'devices'>('main')
-
-function showDevices() {
-  view.value = 'devices'
-}
-
-function showMain() {
-  view.value = 'main'
-}
 
 async function handleToggleKey(code: number) {
   if (!config.value) return
@@ -61,79 +57,82 @@ async function handleLockComboUpdated() {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col bg-background text-on-background font-body-md antialiased rounded-xl border border-outline-variant/40 overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.12),0_2px_16px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)]" style="isolation: isolate; backface-visibility: hidden">
-    <Transition name="view-fade" mode="out-in">
-      <template v-if="view === 'main'" key="main">
-        <div class="flex flex-col h-full">
-          <TitleBar
+  <!-- 外层：填充应用背景色，给 DWM 系统阴影足够可视空间 -->
+  <div
+    :class="['h-screen w-screen bg-surface text-on-surface font-body-md antialiased flex flex-col', maximized ? 'p-0' : 'p-1']"
+    style="isolation: isolate; backface-visibility: hidden; will-change: transform"
+  >
+    <!-- 内层：应用窗口盒 — 仅靠背景色对比和真系统阴影，无任何边框/描边 -->
+    <div
+      :class="[
+        'h-full w-full flex flex-col bg-surface-container-lowest overflow-hidden',
+        maximized ? 'rounded-none' : 'rounded-2xl'
+      ]"
+    >
+      <TitleBar
+        :locked="status?.locked ?? false"
+        @toggle-lock="handleToggleLock"
+      />
+      <PermissionBanner class="shrink-0" />
+
+      <main v-if="loading" class="flex-1 min-h-0 flex items-center justify-center">
+        <p class="text-on-surface-variant font-body-lg">加载中...</p>
+      </main>
+
+      <main v-else-if="error" class="flex-1 min-h-0 flex flex-col items-center justify-center gap-md p-md">
+        <p class="text-error font-body-lg">加载失败: {{ error }}</p>
+        <button
+          @click="refresh"
+          class="px-md py-xs bg-primary text-on-primary rounded-DEFAULT font-label-md hover:bg-primary/90 transition-colors duration-150"
+        >
+          重试
+        </button>
+        <button
+          @click="resetConfig"
+          class="px-md py-xs bg-surface-container text-on-surface-variant border border-outline-variant rounded-DEFAULT font-label-md hover:bg-surface-container-high transition-colors duration-150"
+        >
+          重置配置
+        </button>
+      </main>
+
+      <main v-else class="flex-1 min-h-0 max-w-7xl mx-auto w-full flex flex-col p-md gap-md overflow-y-auto hide-scrollbar">
+        <KeyboardMapper
+          :rules="config?.rules ?? []"
+          :locked="status?.locked ?? false"
+          @toggle-key="handleToggleKey"
+        />
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-md w-full">
+          <EngineToggle
             :locked="status?.locked ?? false"
-            @toggle-lock="handleToggleLock"
-            @show-devices="showDevices"
+            :grab-active="status?.grab_active ?? false"
+            @toggle="handleToggleLock"
           />
-          <PermissionBanner class="shrink-0" />
-
-          <main v-if="loading" class="flex-1 min-h-0 flex items-center justify-center">
-            <p class="text-on-surface-variant font-body-lg">加载中...</p>
-          </main>
-
-          <main v-else-if="error" class="flex-1 min-h-0 flex flex-col items-center justify-center gap-md p-md">
-            <p class="text-error font-body-lg">加载失败: {{ error }}</p>
-            <button
-              @click="refresh"
-              class="px-md py-xs bg-primary text-on-primary rounded-DEFAULT font-label-md hover:bg-primary/90"
-            >
-              重试
-            </button>
-            <button
-              @click="resetConfig"
-              class="px-md py-xs bg-surface-container text-on-surface-variant border border-outline-variant rounded-DEFAULT font-label-md"
-            >
-              重置配置
-            </button>
-          </main>
-
-          <main v-else class="flex-1 min-h-0 max-w-7xl mx-auto w-full flex flex-col p-md gap-md overflow-y-auto">
-            <KeyboardMapper
-              :rules="config?.rules ?? []"
-              :locked="status?.locked ?? false"
-              @toggle-key="handleToggleKey"
-            />
-
-            <section class="grid grid-cols-1 md:grid-cols-2 gap-md w-full">
-              <EngineToggle
-                :locked="status?.locked ?? false"
-                :grab-active="status?.grab_active ?? false"
-                @toggle="handleToggleLock"
+          <div class="bg-surface-container rounded-lg p-md flex flex-col gap-md">
+            <div class="flex items-center gap-sm">
+              <span class="material-symbols-outlined text-secondary">keyboard</span>
+              <span class="font-headline-md text-headline-md text-on-surface">快捷键</span>
+            </div>
+            <div class="flex flex-col gap-sm">
+              <ComboRecorder
+                label="解锁快捷键"
+                :combo="config?.unlock_combo ?? []"
+                command-name="set_unlock_combo"
+                @updated="handleUnlockComboUpdated"
               />
-              <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col gap-md shadow-sm">
-                <div class="flex items-center gap-sm">
-                  <span class="material-symbols-outlined text-secondary">keyboard</span>
-                  <span class="font-headline-md text-headline-md text-on-surface">快捷键</span>
-                </div>
-                <div class="flex flex-col gap-sm">
-                  <ComboRecorder
-                    label="解锁快捷键"
-                    :combo="config?.unlock_combo ?? []"
-                    command-name="set_unlock_combo"
-                    @updated="handleUnlockComboUpdated"
-                  />
-                  <ComboRecorder
-                    label="锁定快捷键"
-                    :combo="config?.lock_combo ?? []"
-                    command-name="set_lock_combo"
-                    @updated="handleLockComboUpdated"
-                  />
-                </div>
-              </div>
-            </section>
+              <ComboRecorder
+                label="锁定快捷键"
+                :combo="config?.lock_combo ?? []"
+                command-name="set_lock_combo"
+                @updated="handleLockComboUpdated"
+              />
+            </div>
+          </div>
+        </section>
 
-            <StatusBar />
-          </main>
-        </div>
-      </template>
-
-      <DeviceManager v-else key="devices" @close="showMain" />
-    </Transition>
+        <StatusBar />
+      </main>
+    </div>
   </div>
 </template>
 
@@ -144,17 +143,5 @@ async function handleLockComboUpdated() {
 .key-btn:active {
   transform: translateY(2px);
   border-bottom-width: 2px !important;
-}
-.view-fade-enter-active,
-.view-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.view-fade-enter-from {
-  opacity: 0;
-  transform: translateY(4px);
-}
-.view-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
 }
 </style>

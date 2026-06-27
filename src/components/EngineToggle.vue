@@ -10,13 +10,13 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md flex flex-col justify-between gap-md shadow-sm">
+  <div class="bg-surface-container rounded-lg p-md flex flex-col justify-between gap-md">
     <div class="flex items-center gap-sm">
       <span class="material-symbols-outlined text-primary">security</span>
       <span class="font-headline-md text-headline-md text-on-surface text-base">锁定引擎</span>
     </div>
     <div
-      class="w-full p-sm bg-surface-container rounded-lg flex items-center justify-between border border-outline-variant/30 cursor-pointer hover:bg-surface-container-high transition-colors h-[42px]"
+      class="w-full p-sm bg-surface-container-high rounded-lg flex items-center justify-between cursor-pointer hover:bg-surface-container-highest transition-colors h-[42px]"
       @click="$emit('toggle')"
     >
       <span class="font-label-md text-label-md font-bold ml-xs" :class="locked ? 'text-on-surface' : 'text-on-surface-variant'">

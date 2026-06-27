@@ -76,7 +76,7 @@ function handleToggle(code: number) {
 </script>
 
 <template>
-  <div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col items-center shadow-sm p-md select-none overflow-x-auto">
+  <div class="bg-surface-container rounded-2xl flex flex-col items-center p-md select-none overflow-x-auto">
     <!-- Header: title + legend + layout selector -->
     <div class="w-full flex justify-between items-center flex-wrap gap-sm mb-sm">
       <div>
@@ -90,25 +90,25 @@ function handleToggle(code: number) {
           <span class="font-label-md text-label-md text-on-surface-variant">键盘布局:</span>
           <select
             v-model="currentLayout"
-            class="bg-surface-container border border-outline-variant rounded-sm text-label-md font-label-md px-sm py-xs focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+            class="bg-surface-container-high border border-outline-variant/30 rounded-md text-label-md font-label-md px-sm py-xs focus:ring-1 focus:ring-primary outline-none cursor-pointer hover:bg-surface-container-highest transition-colors duration-150"
           >
             <option value="ansi">ANSI (US)</option>
             <option value="iso">ISO (UK/EU)</option>
           </select>
         </div>
         <div class="flex items-center gap-xs">
-          <span class="w-3 h-3 rounded-full bg-green-600 shadow-sm border border-green-800"></span>
+          <span class="w-3 h-3 rounded-full bg-primary-container border border-on-primary-container/40"></span>
           <span class="font-label-md text-label-md text-on-surface-variant">允许通行</span>
         </div>
         <div class="flex items-center gap-xs">
-          <span class="w-3 h-3 rounded-full bg-error shadow-sm border border-on-error-container"></span>
+          <span class="w-3 h-3 rounded-full bg-error-container border border-on-error-container/40"></span>
           <span class="font-label-md text-label-md text-on-surface-variant">拦截</span>
         </div>
       </div>
     </div>
 
     <!-- ========== 键盘整体容器 ========== -->
-    <div class="bg-surface-container rounded-lg border border-outline-variant/50 shadow-inner p-sm min-w-max">
+    <div class="bg-surface-container-lowest rounded-xl shadow-inner p-md min-w-max">
       <div class="flex gap-4">
 
         <!-- ========== 主键盘区 (左) ========== -->

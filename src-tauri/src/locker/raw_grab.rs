@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::ptr::null_mut;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -6,7 +6,6 @@ use std::sync::{Arc, Mutex, OnceLock};
 use parking_lot::RwLock;
 
 use super::combo::{ComboResult, ComboTracker};
-use super::device_manager::enumerate_keyboard_devices_with_config;
 use super::engine::EventCallback;
 use super::filter;
 use crate::state::EngineState;
@@ -26,7 +25,6 @@ const VK_RWIN: u16 = 0x5C;
 struct GrabCtx {
     state: Arc<RwLock<EngineState>>,
     cb: Option<EventCallback>,
-    block_map: HashMap<String, bool>,
     mods: HashSet<u32>,
     unlock_tracker: ComboTracker,
     lock_tracker: ComboTracker,
@@ -84,14 +82,6 @@ impl GrabCtx {
         if !locked {
             self.state.write().total_allowed += 1;
             return Decision::Allow;
-        }
-
-        let should_block = config.block_all_devices;
-        let _ = &self.block_map;
-
-        if should_block {
-            self.state.write().total_blocked += 1;
-            return Decision::Consume;
         }
 
         let allow = filter::evaluate(
@@ -191,11 +181,6 @@ pub fn run_grab_loop(
     };
 
     let config = { state.read().config.clone() };
-    let devices = enumerate_keyboard_devices_with_config(&config.keyboard_devices);
-    let mut block_map: HashMap<String, bool> = HashMap::new();
-    for d in &devices {
-        block_map.insert(d.instance_id.clone(), d.is_target);
-    }
 
     let unlock_tracker = ComboTracker::new(config.unlock_combo.clone());
     let lock_tracker = ComboTracker::new(config.lock_combo.clone());
@@ -205,7 +190,6 @@ pub fn run_grab_loop(
         *guard = Some(GrabCtx {
             state: state.clone(),
             cb: event_cb,
-            block_map,
             mods: HashSet::new(),
             unlock_tracker,
             lock_tracker,
