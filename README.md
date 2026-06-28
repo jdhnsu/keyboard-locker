@@ -18,7 +18,8 @@
 
 ### 主界面
 
-<img width="1649" height="1010" alt="image" src="https://github.com/user-attachments/assets/65197d93-56e6-4618-966c-311c35015773" />
+<img width="2559" height="1440" alt="image" src="https://github.com/user-attachments/assets/5d0c891c-592a-4c39-8a67-64917b34dc4f" />
+
 
 
 ## 下载安装
